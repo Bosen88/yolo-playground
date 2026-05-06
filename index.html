@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI × YOLO Python 練習場</title>
+<style>
+  /* ===== 基礎重置 ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange:      #FF8C1A;
+    --orange-dark: #E56B00;
+    --yellow:      #FFC83D;
+    --cream:       #FFF6E5;
+    --dark:        #2B2B2B;
+    --gray:        #6B6B6B;
+    --white:       #FFFFFF;
+    --green:       #2ECC71;
+    --red:         #E74C3C;
+    --blue:        #2E86DE;
+    --code-bg:     #1E1E2E;
+    --code-fg:     #FFC83D;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: "Microsoft JhengHei", "微軟正黑體", "Noto Sans TC", sans-serif;
+    background: var(--cream);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    background: var(--orange);
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  }
+  header h1 {
+    color: var(--white);
+    font-size: 1.15rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  header h1 span { color: var(--yellow); }
+
+  #lesson-badge {
+    background: var(--yellow);
+    color: var(--dark);
+    font-weight: 700;
+    font-size: .8rem;
+    padding: .25rem .75rem;
+    border-radius: 20px;
+  }
+
+  /* ===== TABS ===== */
+  #tab-bar {
+    display: flex;
+    overflow-x: auto;
+    background: var(--orange-dark);
+    scrollbar-width: none;
+  }
+  #tab-bar::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    flex: 0 0 auto;
+    padding: .65rem 1.1rem;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,.75);
+    font-family: inherit;
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--white); background: rgba(255,255,255,.08); }
+  .tab-btn.active {
+    color: var(--yellow);
+    border-bottom-color: var(--yellow);
+    background: rgba(255,255,255,.1);
+  }
+
+  /* ===== MAIN LAYOUT ===== */
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.2rem 1rem 4rem;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ===== LESSON CARD ===== */
+  .lesson-card {
+    background: var(--white);
+    border-left: 6px solid var(--orange);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .lesson-card h2 {
+    font-size: 1.1rem;
+    color: var(--orange-dark);
+    margin-bottom: .4rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .lesson-card p {
+    font-size: .9rem;
+    color: var(--gray);
+    line-height: 1.6;
+  }
+
+  /* ===== CODE EDITOR ===== */
+  .editor-wrap {
+    background: var(--code-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: .8rem 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,.25);
+  }
+  .editor-titlebar {
+    background: #2A2A3E;
+    padding: .45rem .9rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .editor-titlebar .dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+  }
+  .dot-r { background: #FF5F57; }
+  .dot-y { background: #FEBC2E; }
+  .dot-g { background: #28C840; }
+  .editor-titlebar span {
+    color: rgba(255,255,255,.5);
+    font-size: .78rem;
+    margin-left: .3rem;
+  }
+
+  textarea.code-input {
+    width: 100%;
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border: none;
+    outline: none;
+    resize: vertical;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: .95rem;
+    line-height: 1.65;
+    padding: .9rem 1rem;
+    min-height: 160px;
+    tab-size: 4;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn-run {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    background: var(--orange);
+    color: var(--white);
+    border: none;
+    border-radius: 6px;
+    padding: .55rem 1.3rem;
+    font-family: inherit;
+    font-size: .95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+  }
+  .btn-run:hover { background: var(--orange-dark); }
+  .btn-run:active { transform: scale(.97); }
+  .btn-run:disabled { background: #ccc; cursor: not-allowed; }
+
+  .btn-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: transparent;
+    color: var(--gray);
+    border: 1.5px solid #ddd;
+    border-radius: 6px;
+    padding: .5rem 1rem;
+    font-family: inherit;
+    font-size: .88rem;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-reset:hover { border-color: var(--orange); color: var(--orange-dark); }
+
+  .btn-row {
+    display: flex;
+    gap: .6rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: .7rem;
+  }
+
+  /* ===== OUTPUT ===== */
+  .output-box {
+    background: #0F0F1A;
+    border-radius: 8px;
+    padding: .8rem 1rem;
+    font-family: "Consolas", monospace;
+    font-size: .9rem;
+    min-height: 60px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #A8FF78;
+    border-left: 4px solid var(--green);
+    margin-top: .5rem;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .output-box.error { color: #FF6B6B; border-left-color: var(--red); }
+  .output-box.empty { color: rgba(168,255,120,.4); font-style: italic; }
+
+  /* ===== LOADING PYODIDE ===== */
+  #pyodide-loading {
+    text-align: center;
+    padding: 2.5rem 1rem;
+  }
+  #pyodide-loading .spinner {
+    width: 48px; height: 48px;
+    border: 5px solid rgba(255,140,26,.2);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #pyodide-loading p { color: var(--gray); font-size: .95rem; }
+  #pyodide-loading strong { color: var(--orange-dark); }
+
+  /* ===== HINTS ===== */
+  .hint-block {
+    background: #FFF3CD;
+    border-left: 4px solid var(--yellow);
+    border-radius: 6px;
+    padding: .7rem 1rem;
+    font-size: .88rem;
+    color: #7A5C00;
+    margin: .6rem 0;
+    line-height: 1.6;
+  }
+  .hint-block strong { color: var(--orange-dark); }
+
+  details.hint-details summary {
+    cursor: pointer;
+    font-size: .88rem;
+    color: var(--orange-dark);
+    font-weight: 600;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin: .4rem 0;
+  }
+  details.hint-details summary::before { content: "💡 看提示"; }
+  details.hint-details[open] summary::before { content: "💡 收起提示"; }
+  details.hint-details .hint-block { margin-top: .4rem; }
+
+  /* ===== CHALLENGE BADGE ===== */
+  .challenge-title {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: .8rem;
+  }
+  .challenge-title .num {
+    background: var(--orange);
+    color: var(--white);
+    font-weight: 800;
+    font-size: 1.1rem;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .challenge-title h3 { font-size: 1.05rem; color: var(--dark); }
+
+  .tag {
+    display: inline-block;
+    background: var(--yellow);
+    color: var(--dark);
+    font-size: .72rem;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: .1rem .55rem;
+    margin-left: .3rem;
+    vertical-align: middle;
+  }
+  .tag.hard { background: #FFD0D0; color: var(--red); }
+  .tag.medium { background: #FFE8B2; color: #A05A00; }
+
+  /* ===== SANDBOX ===== */
+  #sandbox-area { margin-top: .5rem; }
+
+  /* ===== QUIZ STYLES ===== */
+  .quiz-section { margin-bottom: 2rem; }
+  .quiz-section h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--orange-dark);
+    margin-bottom: .8rem;
+    padding-bottom: .3rem;
+    border-bottom: 2px solid var(--yellow);
+  }
+  .quiz-q {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    margin-bottom: .8rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  }
+  .quiz-q p { font-size: .95rem; margin-bottom: .7rem; line-height: 1.6; }
+  .quiz-q p strong { color: var(--orange-dark); }
+  .quiz-options label {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    padding: .4rem .5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: .9rem;
+    transition: background .1s;
+    margin-bottom: .2rem;
+  }
+  .quiz-options label:hover { background: var(--cream); }
+  .quiz-options input[type=radio] { margin-top: .15rem; accent-color: var(--orange); }
+
+  .quiz-code-q textarea {
+    width: 100%;
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border: 2px solid transparent;
+    border-radius: 6px;
+    font-family: "Consolas", monospace;
+    font-size: .9rem;
+    padding: .7rem .9rem;
+    resize: vertical;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .quiz-code-q textarea:focus { border-color: var(--orange); }
+
+  #submit-quiz {
+    display: block;
+    width: 100%;
+    padding: .9rem;
+    background: var(--orange);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+    margin-top: 1rem;
+  }
+  #submit-quiz:hover { background: var(--orange-dark); }
+
+  #quiz-result {
+    margin-top: 1.2rem;
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    display: none;
+  }
+  #quiz-result.pass {
+    background: #E8F8F0;
+    border-left: 5px solid var(--green);
+  }
+  #quiz-result.fail {
+    background: #FFF0F0;
+    border-left: 5px solid var(--red);
+  }
+  #quiz-result h2 { font-size: 1.3rem; margin-bottom: .5rem; }
+  #quiz-result p { font-size: .95rem; color: var(--gray); line-height: 1.7; }
+  #quiz-result .score-big {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--orange-dark);
+    line-height: 1;
+    margin: .4rem 0;
+  }
+  .wrong-list { margin-top: .8rem; }
+  .wrong-list li {
+    font-size: .88rem;
+    color: var(--red);
+    margin-bottom: .3rem;
+    line-height: 1.5;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 600px) {
+    header h1 { font-size: 1rem; }
+    .tab-btn { padding: .55rem .8rem; font-size: .8rem; }
+    textarea.code-input { font-size: .85rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🤖 AI × YOLO <span>Python 練習場</span></h1>
+  <div id="lesson-badge">Lesson 2 實作</div>
+</header>
+
+<nav id="tab-bar">
+  <button class="tab-btn active" data-tab="intro">🏠 說明</button>
+  <button class="tab-btn" data-tab="lv1">① 變數計算</button>
+  <button class="tab-btn" data-tab="lv2">② 清單迴圈</button>
+  <button class="tab-btn" data-tab="lv3">③ 判斷邏輯</button>
+  <button class="tab-btn" data-tab="lv4">④ 函式</button>
+  <button class="tab-btn" data-tab="lv5">⑤ 猜拳 AI</button>
+  <button class="tab-btn" data-tab="sandbox">🧪 自由沙盒</button>
+  <button class="tab-btn" data-tab="quiz">📝 測驗</button>
+</nav>
+
+<main>
+
+  <!-- ===== PYODIDE 載入中 ===== -->
+  <div id="pyodide-loading">
+    <div class="spinner"></div>
+    <p>正在載入 Python 引擎 <strong>(Pyodide)</strong>，請稍候...</p>
+    <p style="margin-top:.4rem;font-size:.82rem;color:#aaa">只需等一次，之後執行都是即時的</p>
+  </div>
+
+  <!-- ===== TAB: 說明 ===== -->
+  <div class="panel" id="tab-intro">
+    <div class="lesson-card">
+      <h2>👋 歡迎來到 Python 練習場！</h2>
+      <p>這個網頁讓你在瀏覽器裡直接跑 Python，<strong>不需要安裝任何東西</strong>。<br>
+      跟著關卡一步一步練習，最後挑戰測驗，完成課程學習！</p>
+    </div>
+    <div class="lesson-card" style="border-left-color:var(--yellow)">
+      <h2>🗺️ 練習路線</h2>
+      <p>
+        <strong>① 變數計算</strong> → 讓 Python 當計算機<br>
+        <strong>② 清單迴圈</strong> → 一次處理很多資料<br>
+        <strong>③ 判斷邏輯</strong> → if / else 做決策<br>
+        <strong>④ 函式</strong> → 把程式包成可重複使用的小機器<br>
+        <strong>⑤ 猜拳 AI</strong> → 綜合練習：寫出猜拳判斷邏輯<br>
+        <strong>🧪 自由沙盒</strong> → 想跑什麼就跑什麼<br>
+        <strong>📝 測驗</strong> → 確認你真的學會了！
+      </p>
+    </div>
+    <div class="lesson-card" style="border-left-color:var(--green)">
+      <h2>⚡ 使用說明</h2>
+      <p>
+        1. 點選上方分頁切換關卡<br>
+        2. 程式碼可以直接修改<br>
+        3. 按 <strong style="color:var(--orange)">▶ 執行</strong> 看結果<br>
+        4. 按 <strong>↺ 重置</strong> 回到原始題目<br>
+        5. 看不懂可以展開「💡 看提示」
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== TAB: 關卡 1 — 變數計算 ===== -->
+  <div class="panel" id="tab-lv1">
+    <div class="lesson-card">
+      <h2>① 變數與計算 <span class="tag">基礎</span></h2>
+      <p>Python 可以當計算機用。試試看修改數字，讓程式算出你想要的答案。</p>
+    </div>
+
+    <div class="challenge-title">
+      <div class="num">1</div>
+      <h3>讓 Python 幫你算薪資！</h3>
+    </div>
+    <div class="hint-block">
+      任務：把 <code>hourly_rate</code>（時薪）和 <code>hours</code>（工時）填入你自己的數字，印出月薪。
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-titlebar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <span>task1.py</span>
+      </div>
+      <textarea class="code-input" id="code-lv1-1" spellcheck="false">
+# 📌 把數字換成你自己的時薪和工時
+hourly_rate = 200    # 每小時薪資（元）
+hours = 160          # 每月工時
+
+monthly_salary = hourly_rate * hours
+
+print("時薪:", hourly_rate, "元")
+print("工時:", hours, "小時")
+print("月薪:", monthly_salary, "元")
+
+# 🚀 挑戰：加上年薪計算！
+# annual_salary = ???
+# print("年薪:", annual_salary, "元")
+</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn-run" onclick="runCode('lv1-1')">▶ 執行</button>
+      <button class="btn-reset" onclick="resetCode('lv1-1')">↺ 重置</button>
+    </div>
+    <div class="output-box empty" id="out-lv1-1">→ 按「執行」看結果</div>
+
+    <details class="hint-details">
+      <summary></summary>
+      <div class="hint-block">
+        年薪 = 月薪 × 12<br>
+        <code>annual_salary = monthly_salary * 12</code><br>
+        然後用 <code>print("年薪:", annual_salary, "元")</code> 印出來
+      </div>
+    </details>
+
+    <hr style="margin:1.5rem 0;border:none;border-top:2px dashed #FFD580">
+
+    <div class="challenge-title">
+      <div class="num">2</div>
+      <h3>溫度換算 — 攝氏 ↔ 華氏</h3>
+    </div>
+    <div class="hint-block">
+      公式：華氏 = 攝氏 × 9/5 + 32<br>
+      任務：把 37°C（人體溫度）換成華氏，看看是幾度？
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-titlebar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <span>task2.py</span>
+      </div>
+      <textarea class="code-input" id="code-lv1-2" spellcheck="false">
+celsius = 37   # 攝氏溫度
+
+# 📌 在這裡寫換算公式
+fahrenheit = ???
+
+print(f"攝氏 {celsius}°C = 華氏 {fahrenheit}°F")
+</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn-run" onclick="runCode('lv1-2')">▶ 執行</button>
+      <button class="btn-reset" onclick="resetCode('lv1-2')">↺ 重置</button>
+    </div>
+    <div class="output-box empty" id="out-lv1-2">→ 按「執行」看結果</div>
+    <details class="hint-details">
+      <summary></summary>
+      <div class="hint-block">
+        <code>fahrenheit = celsius * 9 / 5 + 32</code><br>
+        答案應該是 98.6°F
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== TAB: 關卡 2 — 清單迴圈 ===== -->
+  <div class="panel" id="tab-lv2">
+    <div class="lesson-card">
+      <h2>② 清單與迴圈 <span class="tag medium">進階</span></h2>
+      <p>List（清單）讓你把很多資料放在一起。for 迴圈讓你一次處理全部。<br>
+      在 YOLO 裡，偵測到的「所有物件」就是一個 List！</p>
+    </div>
+
+    <div class="challenge-title">
+      <div class="num">1</div>
+      <h3>處理偵測結果清單</h3>
+    </div>
+    <div class="hint-block">
+      想像 YOLO 偵測到了下面這些物件。用 for 迴圈把每個都印出來。
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-titlebar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <span>list1.py</span>
+      </div>
+      <textarea class="code-input" id="code-lv2-1" spellcheck="false">
+# YOLO 偵測到的物件清單
+detections = ["person", "car", "dog", "bicycle", "person"]
+
+print("偵測到的物件：")
+for item in detections:
+    print(" -", item)
+
+# 🚀 挑戰：用 len() 印出「共偵測到 X 個物件」
+# print("共偵測到", ???, "個物件")
+</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn-run" onclick="runCode('lv2-1')">▶ 執行</button>
+      <button class="btn-reset" onclick="resetCode('lv2-1')">↺ 重置</button>
+    </div>
+    <div class="output-box empty" id="out-lv2-1">→ 按「執行」看結果</div>
+    <details class="hint-details">
+      <summary></summary>
+      <div class="hint-block">
+        <code>len(detections)</code> 可以得到清單長度（共幾個元素）<br>
+        <code>print("共偵測到", len(detections), "個物件")</code>
+      </div>
+    </details>
+
+    <hr style="margin:1.5rem 0;border:none;border-top:2px dashed #FFD580">
+
+    <div class="challenge-title">
+      <div class="num">2</div>
+      <h3>計算信心分數平均值</h3>
+    </div>
+    <div class="hint-block">
+      YOLO 每個偵測框都有「信心分數」(0~1)。用迴圈加總後算平均。
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-titlebar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <span>list2.py</span>
+      </div>
+      <textarea class="code-input" id="code-lv2-2" spellcheck="false">
+confidences = [0.92, 0.85, 0.78, 0.95, 0.61]
+
+total = 0
+for conf in confidences:
+    total = total + conf
+
+average = total / len(confidences)
+
+print("信心分數清單:", confidences)
+print(f"平均信心分數: {average:.2f}")   # .2f = 小數點兩位
+
+# 🚀 挑戰：找出最高和最低信心分數
+# print("最高:", max(confidences))
+# print("最低:", min(confidences))
+</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn-run" onclick="runCode('lv2-2')">▶ 執行</button>
+      <button class="btn-reset" onclick="resetCode('lv2-2')">↺ 重置</button>
+    </div>
+    <div class="output-box empty" id="out-lv2-2">→ 按「執行」看結果</div>
+    <details class="hint-details">
+      <summary></summary>
+      <div class="hint-block">
+        把兩行的 <code>#</code> 刪掉就行了！<br>
+        <code>max()</code> 取最大值，<code>min()</code> 取最小值
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== TAB: 關卡 3 — 判斷邏輯 ===== -->
+  <div class="panel" id="tab-lv3">
+    <div class="lesson-card">
+      <h2>③ 判斷邏輯 <span class="tag medium">進階</span></h2>
+      <p>if / elif / else 讓程式做「如果...就...否則...」的判斷。<br>
+      YOLO 判斷信心分數是否夠高，就是用這個！</p>
+    </div>
+
+    <div class="challenge-title">
+      <div class="num">1</div>
+      <h3>信心門檻過濾</h3>
+    </div>
+    <div class="hint-block">
+      只有信心 ≥ 0.8 的偵測才顯示。修改 <code>threshold</code> 看看結果有什麼不同。
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-titlebar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <span>filter.py</span>
+      </div>
+      <textarea class="code-input" id="code-lv3-1" spellcheck="false">
+detections = [
+    {"label": "person",   "conf": 0.92},
+    {"label": "car",      "conf": 0.75},
+    {"label": "dog",      "conf": 0.88},
+    {"label": "bicycle",  "conf": 0.55},
+    {"label": "person",   "conf": 0.81},
+]
+
+threshold = 0.8   # 📌 試著改成 0.5 或 0.95
+
+print(f"信心門檻: {threshold}")
+print("通過的偵測：")
+
+for d in detections:
+    if d["conf"] >= threshold:
+        print(f"  ✅ {d['label']}  ({d['conf']:.2f})")
+    else:
+        print(f"  ❌ {d['label']}  ({d['conf']:.2f})  — 過濾掉")
+</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn-run" onclick="runCode('lv3-1')">▶ 執行</button>
+      <button class="btn-reset" onclick="resetCode('lv3-1')">↺ 重置</button>
+    </div>
+    <div class="output-box empty" id="out-lv3-1">→ 按「執行」看結果</div>
+
+    <hr style="margin:1.5rem 0;border:none;border-top:2px dashed #FFD580">
+
+    <div class="challenge-title">
+      <div class="num">2</div>
+      <h3>信心等級評分</h3>
+    </div>
+    <div class="hint-block">
+      用 if / elif / else 把信心分數分成三個等級：高 / 中 / 低。
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-titlebar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <span>grade.py</span>
+      </div>
+      <textarea class="code-input" id="code-lv3-2" spellcheck="false">
+conf = 0.76   # 📌 試著改成不同的值：0.9, 0.65, 0.3
+
+# 📌 補上 elif 和 else 的條件
+if conf >= 0.85:
+    grade = "高 🟢"
+elif conf >= ???:
+    grade = "中 🟡"
+else:
+    grade = "低 🔴"
+
+print(f"信心分數 {conf:.2f} → 等級：{grade}")
+</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn-run" onclick="runCode('lv3-2')">▶ 執行</button>
+      <button class="btn-reset" onclick="resetCode('lv3-2')">↺ 重置</button>
+    </div>
+    <div class="output-box empty" id="out-lv3-2">→ 按「執行」看結果</div>
+    <details class="hint-details">
+      <summary></summary>
+      <div class="hint-block">
+        中等的範圍是 0.6 ~ 0.85，所以 <code>elif conf >= 0.6:</code>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== TAB: 關卡 4 — 函式 ===== -->
+  <div class="panel" id="tab-lv4">
+    <div class="lesson-card">
+      <h2>④ 函式 (Function) <span class="tag medium">進階</span></h2>
+      <p>函式就是「幫一件事取名字」的方法。定義一次，到處可以用。<br>
+      等等的猜拳遊戲裡，<code>judge()</code> 就是一個函式。</p>
+    </div>
+
+    <div class="challenge-title">
+      <div class="num">1</div>
+      <h3>寫一個計算 IoU 的函式</h3>
+    </div>
+    <div class="hint-block">
+      IoU（Intersection over Union）是 YOLO 評估框框準不準的指標。<br>
+      <strong>IoU = 重疊面積 ÷ 聯合面積</strong>（0 = 完全不重疊，1 = 完全重疊）
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-titlebar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <span>iou.py</span>
+      </div>
+      <textarea class="code-input" id="code-lv4-1" spellcheck="false">
+def calc_iou(box_a, box_b):
+    """
+    box = (x1, y1, x2, y2)  左上角 + 右下角
+    """
+    # 重疊區域
+    x1 = max(box_a[0], box_b[0])
+    y1 = max(box_a[1], box_b[1])
+    x2 = min(box_a[2], box_b[2])
+    y2 = min(box_a[3], box_b[3])
+
+    inter_w = max(0, x2 - x1)
+    inter_h = max(0, y2 - y1)
+    intersection = inter_w * inter_h
+
+    # 各自面積
+    area_a = (box_a[2]-box_a[0]) * (box_a[3]-box_a[1])
+    area_b = (box_b[2]-box_b[0]) * (box_b[3]-box_b[1])
+
+    union = area_a + area_b - intersection
+    iou = intersection / union if union > 0 else 0
+    return iou
+
+
+# 測試
+pred  = (50, 50, 200, 200)   # AI 預測的框
+truth = (60, 60, 210, 210)   # 正確答案框
+
+result = calc_iou(pred, truth)
+print(f"IoU = {result:.4f}")
+
+if result >= 0.5:
+    print("✅ 框框夠準！(IoU ≥ 0.5)")
+else:
+    print("❌ 框框太偏了")
+
+# 🚀 挑戰：試試完全不重疊的情況
+# pred2  = (0, 0, 100, 100)
+# truth2 = (200, 200, 300, 300)
+# print("不重疊 IoU:", calc_iou(pred2, truth2))
+</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn-run" onclick="runCode('lv4-1')">▶ 執行</button>
+      <button class="btn-reset" onclick="resetCode('lv4-1')">↺ 重置</button>
+    </div>
+    <div class="output-box empty" id="out-lv4-1">→ 按「執行」看結果</div>
+
+    <hr style="margin:1.5rem 0;border:none;border-top:2px dashed #FFD580">
+
+    <div class="challenge-title">
+      <div class="num">2</div>
+      <h3>完成 get_grade() 函式</h3>
+    </div>
+    <div class="hint-block">
+      把上一關的「信心等級」邏輯包成函式，讓它可以重複使用。
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-titlebar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <span>grade_fn.py</span>
+      </div>
+      <textarea class="code-input" id="code-lv4-2" spellcheck="false">
+def get_grade(conf):
+    # 📌 把關卡3的判斷邏輯寫在這裡
+    # 回傳 "高", "中", 或 "低"
+    if conf >= 0.85:
+        return "高 🟢"
+    elif ???:
+        return "中 🟡"
+    else:
+        return ???
+
+
+# 測試：對所有偵測批次評等
+scores = [0.92, 0.75, 0.88, 0.55, 0.62, 0.91, 0.43]
+
+for s in scores:
+    grade = get_grade(s)
+    print(f"  信心 {s:.2f}  →  {grade}")
+</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn-run" onclick="runCode('lv4-2')">▶ 執行</button>
+      <button class="btn-reset" onclick="resetCode('lv4-2')">↺ 重置</button>
+    </div>
+    <div class="output-box empty" id="out-lv4-2">→ 按「執行」看結果</div>
+    <details class="hint-details">
+      <summary></summary>
+      <div class="hint-block">
+        <code>elif conf >= 0.6:</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<code>return "中 🟡"</code><br>
+        <code>else:</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<code>return "低 🔴"</code>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== TAB: 關卡 5 — 猜拳 AI ===== -->
+  <div class="panel" id="tab-lv5">
+    <div class="lesson-card">
+      <h2>⑤ 猜拳 AI 遊戲 <span class="tag hard">挑戰</span></h2>
+      <p>綜合前四關的技能，寫出完整的猜拳遊戲邏輯！<br>
+      這就是我們 YOLO 程式裡 <code>judge()</code> 函式的核心。</p>
+    </div>
+
+    <div class="challenge-title">
+      <div class="num">✊✌✋</div>
+      <h3>完成猜拳遊戲</h3>
+    </div>
+    <div class="hint-block">
+      任務：<br>
+      1. 完成 <code>judge(player, ai)</code> 函式，回傳 "你贏了！" / "AI 贏了！" / "平手！"<br>
+      2. 讓 AI 隨機出拳<br>
+      3. 跑完五局，統計勝負
+    </div>
+    <div class="editor-wrap">
+      <div class="editor-titlebar">
+        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+        <span>rps_game.py</span>
+      </div>
+      <textarea class="code-input" id="code-lv5-1" spellcheck="false">
+import random
+
+CHOICES = ["rock", "paper", "scissors"]
+
+# 誰打敗誰：WIN[a] = b 表示 a 打敗 b
+WIN = {
+    "rock":     "scissors",   # 石頭 贏 剪刀
+    "paper":    "rock",       # 布   贏 石頭
+    "scissors": "paper",      # 剪刀 贏 布
+}
+
+EMOJI = {"rock": "✊", "paper": "✋", "scissors": "✌"}
+
+
+def judge(player, ai):
+    """回傳 '你贏了！' / 'AI 贏了！' / '平手！'"""
+    if player == ai:
+        return "平手！"
+    elif ???:          # 📌 玩家贏的條件
+        return "你贏了！ 🎉"
+    else:
+        return "AI 贏了！ 🤖"
+
+
+# ----- 模擬五局 -----
+player_choices = ["rock", "scissors", "paper", "rock", "paper"]
+
+wins = 0
+losses = 0
+draws = 0
+
+print("===== 猜拳對戰 =====")
+for i, player in enumerate(player_choices):
+    ai = random.choice(CHOICES)
+    result = judge(player, ai)
+
+    print(f"第{i+1}局  你:{EMOJI[player]}  AI:{EMOJI[ai]}  → {result}")
+
+    if "你贏" in result:
+        wins += 1
+    elif "AI贏" in result or "AI 贏" in result:
+        losses += 1
+    else:
+        draws += 1
+
+print()
+print(f"最終戰績：{wins}勝 {losses}敗 {draws}平")
+</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn-run" onclick="runCode('lv5-1')">▶ 執行</button>
+      <button class="btn-reset" onclick="resetCode('lv5-1')">↺ 重置</button>
+    </div>
+    <div class="output-box empty" id="out-lv5-1">→ 按「執行」看結果</div>
+    <details class="hint-details">
+      <summary></summary>
+      <div class="hint-block">
+        玩家贏的條件：玩家出的拳 打敗 AI 出的拳<br>
+        也就是：<code>WIN[player] == ai</code><br>
+        所以：<code>elif WIN[player] == ai:</code>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===== TAB: 自由沙盒 ===== -->
+  <div class="panel" id="tab-sandbox">
+    <div class="lesson-card">
+      <h2>🧪 自由沙盒</h2>
+      <p>想跑什麼就跑什麼！支援完整 Python 標準函式庫。</p>
+    </div>
+    <div id="sandbox-area">
+      <div class="editor-wrap">
+        <div class="editor-titlebar">
+          <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+          <span>sandbox.py</span>
+        </div>
+        <textarea class="code-input" id="code-sandbox" style="min-height:300px" spellcheck="false">
+# 🎉 這裡可以跑任何 Python！
+import math
+import random
+
+# 試試看：
+print("Hello, AI World!")
+print("圓周率:", math.pi)
+print("隨機數:", random.randint(1, 100))
+
+# 清單推導式
+squares = [x**2 for x in range(1, 11)]
+print("1~10 的平方:", squares)
+</textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn-run" onclick="runCode('sandbox')">▶ 執行</button>
+        <button class="btn-reset" onclick="resetCode('sandbox')">↺ 重置</button>
+      </div>
+      <div class="output-box empty" id="out-sandbox">→ 按「執行」看結果</div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: 測驗 ===== -->
+  <div class="panel" id="tab-quiz">
+    <div class="lesson-card">
+      <h2>📝 課程測驗</h2>
+      <p>完成下面的題目，才算真正通過課程！<br>
+      共 <strong>10 題</strong>：5 題選擇 + 5 題程式填空（在沙盒裡跑過才能確認）<br>
+      <strong style="color:var(--orange-dark)">及格分數：70 分</strong></p>
+    </div>
+
+    <form id="quiz-form">
+
+      <!-- 選擇題 -->
+      <div class="quiz-section">
+        <h3>Part A  選擇題（每題 8 分）</h3>
+
+        <div class="quiz-q" id="q1">
+          <p><strong>Q1.</strong> 下列何者最能描述「深度學習 (Deep Learning)」與「機器學習 (Machine Learning)」的關係？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q1" value="a"> (A) 兩者完全不同，沒有包含關係</label>
+            <label><input type="radio" name="q1" value="b"> (B) 深度學習是機器學習的一個子集</label>
+            <label><input type="radio" name="q1" value="c"> (C) 機器學習是深度學習的一個子集</label>
+            <label><input type="radio" name="q1" value="d"> (D) 兩者是完全相同的東西</label>
+          </div>
+        </div>
+
+        <div class="quiz-q" id="q2">
+          <p><strong>Q2.</strong> YOLO 名稱代表的意思是？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q2" value="a"> (A) You Only Look Once</label>
+            <label><input type="radio" name="q2" value="b"> (B) Your Object Labels Optimizer</label>
+            <label><input type="radio" name="q2" value="c"> (C) Yet Another Object Locator</label>
+            <label><input type="radio" name="q2" value="d"> (D) Year Of Large Objects</label>
+          </div>
+        </div>
+
+        <div class="quiz-q" id="q3">
+          <p><strong>Q3.</strong> 在電腦視覺中，「物件偵測 (Object Detection)」和「影像分類 (Image Classification)」最主要的差異是什麼？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q3" value="a"> (A) 分類速度比偵測快</label>
+            <label><input type="radio" name="q3" value="b"> (B) 偵測不只說出是什麼，還會標出位置（畫框）</label>
+            <label><input type="radio" name="q3" value="c"> (C) 分類可以處理影片，偵測只能處理圖片</label>
+            <label><input type="radio" name="q3" value="d"> (D) 兩者功能完全相同，只是名稱不同</label>
+          </div>
+        </div>
+
+        <div class="quiz-q" id="q4">
+          <p><strong>Q4.</strong> 下列哪個指令可以安裝 Ultralytics YOLO 套件？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q4" value="a"> (A) <code>conda install yolo</code></label>
+            <label><input type="radio" name="q4" value="b"> (B) <code>pip install ultralytics</code></label>
+            <label><input type="radio" name="q4" value="c"> (C) <code>apt-get install yolov8</code></label>
+            <label><input type="radio" name="q4" value="d"> (D) <code>npm install ultralytics</code></label>
+          </div>
+        </div>
+
+        <div class="quiz-q" id="q5">
+          <p><strong>Q5.</strong> 訓練 YOLO 模型時，Loss（損失值）代表什麼？理想的訓練過程中 Loss 應該？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q5" value="a"> (A) Loss 越高越好，代表模型學到越多</label>
+            <label><input type="radio" name="q5" value="b"> (B) Loss 代表模型預測的誤差，應該隨訓練而下降</label>
+            <label><input type="radio" name="q5" value="c"> (C) Loss 固定不變，只有準確率會改變</label>
+            <label><input type="radio" name="q5" value="d"> (D) Loss 應該在訓練中上升，最後才下降</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 程式填空題 -->
+      <div class="quiz-section">
+        <h3>Part B  程式理解題（每題 8 分）</h3>
+        <div class="hint-block">
+          💡 先在上方「自由沙盒」跑過，確認答案後再填入
+        </div>
+
+        <div class="quiz-q quiz-code-q" id="q6">
+          <p><strong>Q6.</strong> 下方程式執行後，<code>result</code> 的值是多少？</p>
+          <div class="editor-wrap" style="margin:.5rem 0">
+            <textarea class="code-input" style="min-height:80px;pointer-events:none;opacity:.85" readonly>
+x = 10
+y = 3
+result = x // y   # 整除（無條件捨去小數）
+</textarea>
+          </div>
+          <p style="margin-top:.5rem">答案：<code>result</code> =
+            <input type="text" name="q6" placeholder="填入數字"
+              style="border:2px solid #ddd;border-radius:5px;padding:.3rem .6rem;font-size:.95rem;width:100px;outline:none;font-family:Consolas">
+          </p>
+        </div>
+
+        <div class="quiz-q quiz-code-q" id="q7">
+          <p><strong>Q7.</strong> 執行後會印出幾行？</p>
+          <div class="editor-wrap" style="margin:.5rem 0">
+            <textarea class="code-input" style="min-height:80px;pointer-events:none;opacity:.85" readonly>
+items = ["rock", "paper", "scissors", "rock"]
+for item in items:
+    if item == "rock":
+        print("石頭！")
+</textarea>
+          </div>
+          <p style="margin-top:.5rem">答案：印出
+            <input type="text" name="q7" placeholder="填入數字"
+              style="border:2px solid #ddd;border-radius:5px;padding:.3rem .6rem;font-size:.95rem;width:100px;outline:none;font-family:Consolas">
+            行
+          </p>
+        </div>
+
+        <div class="quiz-q quiz-code-q" id="q8">
+          <p><strong>Q8.</strong> 填入空白，讓這個函式計算並回傳清單的最大值？</p>
+          <div class="editor-wrap" style="margin:.5rem 0">
+            <textarea class="code-input" style="min-height:80px;pointer-events:none;opacity:.85" readonly>
+def find_max(numbers):
+    best = numbers[0]
+    for n in numbers:
+        if n > best:
+            best = n
+    return ______
+
+print(find_max([3, 7, 2, 9, 1]))  # 應該印出 9
+</textarea>
+          </div>
+          <p style="margin-top:.5rem">空白處應填入：
+            <input type="text" name="q8" placeholder="填入答案"
+              style="border:2px solid #ddd;border-radius:5px;padding:.3rem .6rem;font-size:.95rem;width:140px;outline:none;font-family:Consolas">
+          </p>
+        </div>
+
+        <div class="quiz-q quiz-code-q" id="q9">
+          <p><strong>Q9.</strong> 執行後 <code>count</code> 等於多少？</p>
+          <div class="editor-wrap" style="margin:.5rem 0">
+            <textarea class="code-input" style="min-height:100px;pointer-events:none;opacity:.85" readonly>
+detections = [
+    {"label": "person", "conf": 0.92},
+    {"label": "car",    "conf": 0.65},
+    {"label": "person", "conf": 0.88},
+    {"label": "dog",    "conf": 0.45},
+]
+count = 0
+for d in detections:
+    if d["label"] == "person" and d["conf"] >= 0.8:
+        count += 1
+</textarea>
+          </div>
+          <p style="margin-top:.5rem">答案：<code>count</code> =
+            <input type="text" name="q9" placeholder="填入數字"
+              style="border:2px solid #ddd;border-radius:5px;padding:.3rem .6rem;font-size:.95rem;width:100px;outline:none;font-family:Consolas">
+          </p>
+        </div>
+
+        <div class="quiz-q quiz-code-q" id="q10">
+          <p><strong>Q10.</strong> 下面哪一行程式碼可以讀取 Webcam，並取得第一幀影像？選出正確的 <code>cap</code> 初始化方式。</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q10" value="a"> (A) <code>cap = cv2.VideoCapture("webcam")</code></label>
+            <label><input type="radio" name="q10" value="b"> (B) <code>cap = cv2.VideoCapture(0)</code></label>
+            <label><input type="radio" name="q10" value="c"> (C) <code>cap = cv2.imread(0)</code></label>
+            <label><input type="radio" name="q10" value="d"> (D) <code>cap = cv2.open_camera(0)</code></label>
+          </div>
+        </div>
+
+      </div>
+
+      <button type="button" id="submit-quiz" onclick="submitQuiz()">
+        ✅ 提交測驗
+      </button>
+
+    </form>
+
+    <div id="quiz-result">
+      <div class="score-big" id="score-display"></div>
+      <h2 id="result-title"></h2>
+      <p id="result-msg"></p>
+      <ul class="wrong-list" id="wrong-list"></ul>
+    </div>
+
+  </div><!-- end quiz panel -->
+
+</main>
+
+<!-- ===== PYODIDE ===== -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.3/full/pyodide.js"></script>
+<script>
+
+// ===== 題目預設程式碼 (重置用) =====
+const DEFAULT_CODE = {};
+
+// ===== PYODIDE 初始化 =====
+let pyodide = null;
+let pyodideReady = false;
+
+async function initPyodide() {
+  try {
+    pyodide = await loadPyodide();
+    // 攔截 print 輸出
+    pyodide.runPython(`
+import sys, io
+class _Capture(io.StringIO):
+    pass
+_buf = _Capture()
+sys.stdout = _buf
+sys.stderr = _buf
+`);
+    pyodideReady = true;
+    document.getElementById("pyodide-loading").style.display = "none";
+    // 啟用所有執行按鈕
+    document.querySelectorAll(".btn-run").forEach(b => b.disabled = false);
+    // 解鎖分頁
+    activateTab("intro");
+  } catch(e) {
+    document.getElementById("pyodide-loading").innerHTML =
+      `<p style="color:var(--red)">❌ 載入失敗，請重新整理頁面<br><small>${e}</small></p>`;
+  }
+}
+initPyodide();
+
+// ===== 執行程式碼 =====
+async function runCode(id) {
+  if (!pyodideReady) return;
+  const code = document.getElementById(`code-${id}`).value;
+  const outEl = document.getElementById(`out-${id}`);
+
+  outEl.className = "output-box";
+  outEl.textContent = "⏳ 執行中...";
+
+  try {
+    // 重置 buffer
+    pyodide.runPython(`_buf.truncate(0); _buf.seek(0)`);
+    await pyodide.runPythonAsync(code);
+    const output = pyodide.runPython(`_buf.getvalue()`);
+    if (output.trim() === "") {
+      outEl.textContent = "(沒有輸出)";
+      outEl.className = "output-box empty";
+    } else {
+      outEl.textContent = output;
+      outEl.className = "output-box";
+    }
+  } catch(err) {
+    outEl.textContent = "❌ " + err.message;
+    outEl.className = "output-box error";
+  }
+}
+
+// ===== 重置程式碼 =====
+function resetCode(id) {
+  const el = document.getElementById(`code-${id}`);
+  if (DEFAULT_CODE[id]) {
+    el.value = DEFAULT_CODE[id];
+    const out = document.getElementById(`out-${id}`);
+    out.textContent = "→ 按「執行」看結果";
+    out.className = "output-box empty";
+  }
+}
+
+// ===== 分頁切換 =====
+const TAB_MAP = {
+  "intro":   "tab-intro",
+  "lv1":     "tab-lv1",
+  "lv2":     "tab-lv2",
+  "lv3":     "tab-lv3",
+  "lv4":     "tab-lv4",
+  "lv5":     "tab-lv5",
+  "sandbox": "tab-sandbox",
+  "quiz":    "tab-quiz",
+};
+
+function activateTab(name) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.querySelector(`[data-tab="${name}"]`).classList.add("active");
+  const panelId = TAB_MAP[name];
+  if (panelId) document.getElementById(panelId).classList.add("active");
+}
+
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => activateTab(btn.dataset.tab));
+});
+
+// ===== 初始化：存下預設程式碼 =====
+window.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("textarea.code-input[id^='code-']").forEach(el => {
+    const id = el.id.replace("code-", "");
+    DEFAULT_CODE[id] = el.value;
+  });
+  // 預設停用執行按鈕，等 Pyodide 好了再開
+  document.querySelectorAll(".btn-run").forEach(b => b.disabled = true);
+});
+
+// ===== 測驗評分 =====
+const ANSWERS = {
+  q1:  "b",
+  q2:  "a",
+  q3:  "b",
+  q4:  "b",
+  q5:  "b",
+  q6:  "3",
+  q7:  "2",
+  q8:  "best",
+  q9:  "2",
+  q10: "b",
+};
+
+const Q_LABELS = {
+  q1:  "Q1 深度學習與機器學習的關係",
+  q2:  "Q2 YOLO 名稱意思",
+  q3:  "Q3 物件偵測 vs 影像分類",
+  q4:  "Q4 安裝 Ultralytics 指令",
+  q5:  "Q5 Loss 的意義",
+  q6:  "Q6 整除運算結果",
+  q7:  "Q7 迴圈印出行數",
+  q8:  "Q8 函式 return 填空",
+  q9:  "Q9 計數器結果",
+  q10: "Q10 VideoCapture 用法",
+};
+
+function submitQuiz() {
+  const form = document.getElementById("quiz-form");
+  let score = 0;
+  const wrong = [];
+
+  for (const [qid, correct] of Object.entries(ANSWERS)) {
+    const input = form.querySelector(`[name="${qid}"]`);
+    let userAns = "";
+
+    if (input.type === "text") {
+      userAns = input.value.trim().toLowerCase();
+      const correctLower = correct.toLowerCase();
+      if (userAns === correctLower) {
+        score += 8;
+      } else {
+        wrong.push({ q: Q_LABELS[qid], yours: userAns || "(空白)", correct });
+      }
+    } else {
+      // radio
+      const checked = form.querySelector(`[name="${qid}"]:checked`);
+      userAns = checked ? checked.value : "";
+      if (userAns === correct) {
+        score += 8;
+        if (qid === "q1") score += 2; // bonus 湊 100
+        if (qid === "q5") score += 2;
+      } else {
+        wrong.push({ q: Q_LABELS[qid], yours: userAns ? `(${userAns.toUpperCase()})` : "(未作答)", correct: `(${correct.toUpperCase()})` });
+      }
+    }
+  }
+  // 確保 100 分上限
+  score = Math.min(score, 100);
+
+  const resultEl = document.getElementById("quiz-result");
+  const scoreEl  = document.getElementById("score-display");
+  const titleEl  = document.getElementById("result-title");
+  const msgEl    = document.getElementById("result-msg");
+  const wrongEl  = document.getElementById("wrong-list");
+
+  scoreEl.textContent = score + " 分";
+  wrongEl.innerHTML = "";
+
+  if (score >= 70) {
+    resultEl.className = "pass";
+    resultEl.style.display = "block";
+    titleEl.textContent = "🎉 恭喜通過！";
+    msgEl.textContent = `你的得分是 ${score} 分，已達到 70 分及格標準。代表你已具備 AI × YOLO 基礎知識！繼續動手做專案，進步會很快。`;
+  } else {
+    resultEl.className = "fail";
+    resultEl.style.display = "block";
+    titleEl.textContent = "📚 尚未及格，再努力一下！";
+    msgEl.textContent = `你的得分是 ${score} 分，未達 70 分。下方是答錯的題目，回到投影片複習後再試一次！`;
+  }
+
+  if (wrong.length > 0) {
+    wrong.forEach(w => {
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>${w.q}</strong>：你的答案 ${w.yours}，正確答案 ${w.correct}`;
+      wrongEl.appendChild(li);
+    });
+  }
+
+  resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+</script>
+</body>
+</html>
