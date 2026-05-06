@@ -432,7 +432,8 @@
   <button class="tab-btn" data-tab="lv4">④ 函式</button>
   <button class="tab-btn" data-tab="lv5">⑤ 猜拳 AI</button>
   <button class="tab-btn" data-tab="sandbox">🧪 自由沙盒</button>
-  <button class="tab-btn" data-tab="quiz">📝 測驗</button>
+  <button class="tab-btn" data-tab="quiz1">📖 第一堂測驗</button>
+  <button class="tab-btn" data-tab="quiz">📝 第二堂測驗</button>
 </nav>
 
 <main>
@@ -983,10 +984,148 @@ print("1~10 的平方:", squares)
     </div>
   </div>
 
+  <!-- ===== TAB: 第一堂測驗 ===== -->
+  <div class="panel" id="tab-quiz1">
+    <div class="lesson-card">
+      <h2>📖 第一堂測驗 — AI 入門理論</h2>
+      <p>測驗範圍：AI 歷史、ML/DL/CV 概念、Python 基礎、OpenCV、YOLO 演進<br>
+      共 <strong>10 題選擇題</strong>，每題 10 分<br>
+      <strong style="color:var(--orange-dark)">及格分數：70 分</strong></p>
+    </div>
+
+    <form id="quiz1-form">
+      <div class="quiz-section">
+        <h3>AI 歷史 × ML / DL 概念（4 題）</h3>
+
+        <div class="quiz-q" id="q1a">
+          <p><strong>Q1.</strong> 2012 年哪個事件被視為「深度學習引爆點」，讓電腦視覺準確率大幅躍升？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q1a" value="a"> (A) AlphaGo 打敗圍棋世界冠軍</label>
+            <label><input type="radio" name="q1a" value="b"> (B) AlexNet 在 ImageNet 競賽奪冠</label>
+            <label><input type="radio" name="q1a" value="c"> (C) ChatGPT 公開上線</label>
+            <label><input type="radio" name="q1a" value="d"> (D) IBM 深藍打敗西洋棋王</label>
+          </div>
+        </div>
+
+        <div class="quiz-q" id="q2a">
+          <p><strong>Q2.</strong> 下列關於 AI 三次浪潮的敘述，何者正確？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q2a" value="a"> (A) 第一波浪潮以深度神經網路為主</label>
+            <label><input type="radio" name="q2a" value="b"> (B) 第二波浪潮是機器學習，仍需人工設計特徵</label>
+            <label><input type="radio" name="q2a" value="c"> (C) 第三波浪潮以符號規則系統為主</label>
+            <label><input type="radio" name="q2a" value="d"> (D) AI 三次浪潮都沒有遇過寒冬期</label>
+          </div>
+        </div>
+
+        <div class="quiz-q" id="q3a">
+          <p><strong>Q3.</strong> 下圖關係何者正確？（大的包含小的）</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q3a" value="a"> (A) ML ⊃ AI ⊃ DL ⊃ YOLO</label>
+            <label><input type="radio" name="q3a" value="b"> (B) DL ⊃ ML ⊃ AI ⊃ YOLO</label>
+            <label><input type="radio" name="q3a" value="c"> (C) AI ⊃ ML ⊃ DL ⊃ YOLO</label>
+            <label><input type="radio" name="q3a" value="d"> (D) YOLO ⊃ DL ⊃ ML ⊃ AI</label>
+          </div>
+        </div>
+
+        <div class="quiz-q" id="q4a">
+          <p><strong>Q4.</strong> 監督式學習（Supervised Learning）的核心三步驟，正確順序是？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q4a" value="a"> (A) 推論 → 訓練 → 餵資料</label>
+            <label><input type="radio" name="q4a" value="b"> (B) 訓練 → 餵資料 → 推論</label>
+            <label><input type="radio" name="q4a" value="c"> (C) 餵資料（含標註）→ 訓練 → 推論</label>
+            <label><input type="radio" name="q4a" value="d"> (D) 標註 → 推論 → 訓練</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="quiz-section">
+        <h3>OpenCV × 影像基礎（2 題）</h3>
+
+        <div class="quiz-q" id="q5a">
+          <p><strong>Q5.</strong> 一張解析度 640×480 的彩色圖片（RGB），在電腦記憶體中的陣列形狀（shape）是？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q5a" value="a"> (A) (640, 480)</label>
+            <label><input type="radio" name="q5a" value="b"> (B) (480, 640, 3)</label>
+            <label><input type="radio" name="q5a" value="c"> (C) (3, 640, 480)</label>
+            <label><input type="radio" name="q5a" value="d"> (D) (640, 480, 1)</label>
+          </div>
+        </div>
+
+        <div class="quiz-q" id="q6a">
+          <p><strong>Q6.</strong> 在 YOLO 的完整流程中，OpenCV 主要負責哪兩個角色？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q6a" value="a"> (A) 訓練模型 + 調整超參數</label>
+            <label><input type="radio" name="q6a" value="b"> (B) 輸入端讀取影像 + 輸出端畫框顯示結果</label>
+            <label><input type="radio" name="q6a" value="c"> (C) 下載資料集 + 上傳到雲端</label>
+            <label><input type="radio" name="q6a" value="d"> (D) 標註資料 + 計算 mAP</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="quiz-section">
+        <h3>YOLO 演進 × 物件偵測（4 題）</h3>
+
+        <div class="quiz-q" id="q7a">
+          <p><strong>Q7.</strong> YOLO 相比傳統 Two-stage 偵測器（如 R-CNN）最大的優勢是什麼？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q7a" value="a"> (A) 準確率是目前所有模型中最高的</label>
+            <label><input type="radio" name="q7a" value="b"> (B) 整張圖只看一次，速度大幅提升，可達即時偵測</label>
+            <label><input type="radio" name="q7a" value="c"> (C) 不需要 GPU 就能跑</label>
+            <label><input type="radio" name="q7a" value="d"> (D) 可以在不標註資料的情況下訓練</label>
+          </div>
+        </div>
+
+        <div class="quiz-q" id="q8a">
+          <p><strong>Q8.</strong> 現在新專案要入門 YOLO，最推薦從哪個版本開始？（生態最完整、文件最豐富）</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q8a" value="a"> (A) YOLOv1（最原始版本）</label>
+            <label><input type="radio" name="q8a" value="b"> (B) YOLOv3（最多人用過）</label>
+            <label><input type="radio" name="q8a" value="c"> (C) YOLOv8 或 YOLOv11（Ultralytics 出品）</label>
+            <label><input type="radio" name="q8a" value="d"> (D) 每個版本都一樣，隨便選</label>
+          </div>
+        </div>
+
+        <div class="quiz-q" id="q9a">
+          <p><strong>Q9.</strong> 下列哪種情況最<strong>不適合</strong>直接用 YOLO 解決？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q9a" value="a"> (A) 工廠產線上偵測螺絲有沒有裝好（圖片充足）</label>
+            <label><input type="radio" name="q9a" value="b"> (B) 即時偵測停車場進出車輛</label>
+            <label><input type="radio" name="q9a" value="c"> (C) 用 10 張圖訓練，辨識全新設計的晶片瑕疵</label>
+            <label><input type="radio" name="q9a" value="d"> (D) 便利商店貨架自動盤點商品數量</label>
+          </div>
+        </div>
+
+        <div class="quiz-q" id="q10a">
+          <p><strong>Q10.</strong> 訓練 YOLO 最關鍵的資料品質原則，下列何者最正確？</p>
+          <div class="quiz-options">
+            <label><input type="radio" name="q10a" value="a"> (A) 資料越多越好，品質不重要</label>
+            <label><input type="radio" name="q10a" value="b"> (B) 模型越大準確率越高，優先選最大的模型</label>
+            <label><input type="radio" name="q10a" value="c"> (C) 資料品質 > 資料數量，多樣性（角度/光線/背景）比張數更重要</label>
+            <label><input type="radio" name="q10a" value="d"> (D) 標註框只要大概對就好，精確度不影響結果</label>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" id="submit-quiz1" onclick="submitQuiz1()"
+        style="display:block;width:100%;padding:.9rem;background:var(--orange);color:var(--white);
+               border:none;border-radius:8px;font-family:inherit;font-size:1.05rem;font-weight:700;
+               cursor:pointer;transition:background .15s;margin-top:1rem;">
+        ✅ 提交第一堂測驗
+      </button>
+    </form>
+
+    <div id="quiz1-result" style="display:none;margin-top:1.2rem;border-radius:8px;padding:1.2rem 1.5rem;">
+      <div class="score-big" id="score1-display"></div>
+      <h2 id="result1-title"></h2>
+      <p id="result1-msg"></p>
+      <ul class="wrong-list" id="wrong1-list"></ul>
+    </div>
+  </div><!-- end quiz1 panel -->
+
   <!-- ===== TAB: 測驗 ===== -->
   <div class="panel" id="tab-quiz">
     <div class="lesson-card">
-      <h2>📝 課程測驗</h2>
+      <h2>📝 第二堂測驗 — Python 實作</h2>
       <p>完成下面的題目，才算真正通過課程！<br>
       共 <strong>10 題</strong>：5 題選擇 + 5 題程式填空（在沙盒裡跑過才能確認）<br>
       <strong style="color:var(--orange-dark)">及格分數：70 分</strong></p>
@@ -1242,6 +1381,7 @@ const TAB_MAP = {
   "lv4":     "tab-lv4",
   "lv5":     "tab-lv5",
   "sandbox": "tab-sandbox",
+  "quiz1":   "tab-quiz1",
   "quiz":    "tab-quiz",
 };
 
@@ -1267,7 +1407,83 @@ window.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".btn-run").forEach(b => b.disabled = true);
 });
 
-// ===== 測驗評分 =====
+// ===== 第一堂測驗評分 =====
+const ANSWERS1 = {
+  q1a: "b",
+  q2a: "b",
+  q3a: "c",
+  q4a: "c",
+  q5a: "b",
+  q6a: "b",
+  q7a: "b",
+  q8a: "c",
+  q9a: "c",
+  q10a:"c",
+};
+
+const Q1_LABELS = {
+  q1a:  "Q1 深度學習引爆點事件",
+  q2a:  "Q2 AI 三次浪潮描述",
+  q3a:  "Q3 AI / ML / DL / YOLO 包含關係",
+  q4a:  "Q4 監督式學習三步驟順序",
+  q5a:  "Q5 彩色圖片陣列 shape",
+  q6a:  "Q6 OpenCV 在 YOLO 流程中的角色",
+  q7a:  "Q7 YOLO 相比 Two-stage 的優勢",
+  q8a:  "Q8 新手推薦入門 YOLO 版本",
+  q9a:  "Q9 不適合用 YOLO 的情境",
+  q10a: "Q10 資料品質原則",
+};
+
+function submitQuiz1() {
+  const form = document.getElementById("quiz1-form");
+  let score = 0;
+  const wrong = [];
+
+  for (const [qid, correct] of Object.entries(ANSWERS1)) {
+    const checked = form.querySelector(`[name="${qid}"]:checked`);
+    const userAns = checked ? checked.value : "";
+    if (userAns === correct) {
+      score += 10;
+    } else {
+      wrong.push({
+        q: Q1_LABELS[qid],
+        yours: userAns ? `(${userAns.toUpperCase()})` : "(未作答)",
+        correct: `(${correct.toUpperCase()})`,
+      });
+    }
+  }
+
+  const resultEl = document.getElementById("quiz1-result");
+  const scoreEl  = document.getElementById("score1-display");
+  const titleEl  = document.getElementById("result1-title");
+  const msgEl    = document.getElementById("result1-msg");
+  const wrongEl  = document.getElementById("wrong1-list");
+
+  scoreEl.textContent = score + " 分";
+  wrongEl.innerHTML = "";
+
+  if (score >= 70) {
+    resultEl.className = "pass";
+    resultEl.style.display = "block";
+    titleEl.textContent = "🎉 第一堂測驗通過！";
+    msgEl.textContent = `你的得分是 ${score} 分，已達 70 分及格標準。AI 入門理論觀念掌握得很好！準備好進入第二堂實作了嗎？`;
+  } else {
+    resultEl.className = "fail";
+    resultEl.style.display = "block";
+    titleEl.textContent = "📚 尚未及格，再複習一下！";
+    msgEl.textContent = `你的得分是 ${score} 分，未達 70 分。回去看看第一堂投影片，特別注意答錯的題目，再試一次！`;
+  }
+
+  wrong.forEach(w => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${w.q}</strong>：你的答案 ${w.yours}，正確答案 ${w.correct}`;
+    wrongEl.appendChild(li);
+  });
+
+  resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ===== 第二堂測驗評分 =====
 const ANSWERS = {
   q1:  "b",
   q2:  "a",
