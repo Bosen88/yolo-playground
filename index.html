@@ -64,16 +64,23 @@
 
   /* ===== TABS ===== */
   #tab-bar {
+    background: var(--orange-dark);
+  }
+  #tab-bar-row1,
+  #tab-bar-row2 {
     display: flex;
     overflow-x: auto;
-    background: var(--orange-dark);
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.3) transparent;
   }
-  #tab-bar::-webkit-scrollbar { display: none; }
+  #tab-bar-row2 {
+    background: rgba(0,0,0,.18);
+    border-top: 1px solid rgba(255,255,255,.12);
+  }
 
   .tab-btn {
     flex: 0 0 auto;
-    padding: .65rem 1.1rem;
+    padding: .6rem 1.1rem;
     border: none;
     background: transparent;
     color: rgba(255,255,255,.75);
@@ -90,6 +97,10 @@
     color: var(--yellow);
     border-bottom-color: var(--yellow);
     background: rgba(255,255,255,.1);
+  }
+  .tab-btn.quiz-btn {
+    font-size: .92rem;
+    padding: .55rem 1.4rem;
   }
 
   /* ===== MAIN LAYOUT ===== */
@@ -425,15 +436,19 @@
 </header>
 
 <nav id="tab-bar">
-  <button class="tab-btn active" data-tab="intro">🏠 說明</button>
-  <button class="tab-btn" data-tab="lv1">① 變數計算</button>
-  <button class="tab-btn" data-tab="lv2">② 清單迴圈</button>
-  <button class="tab-btn" data-tab="lv3">③ 判斷邏輯</button>
-  <button class="tab-btn" data-tab="lv4">④ 函式</button>
-  <button class="tab-btn" data-tab="lv5">⑤ 猜拳 AI</button>
-  <button class="tab-btn" data-tab="sandbox">🧪 自由沙盒</button>
-  <button class="tab-btn" data-tab="quiz1">📖 第一堂測驗</button>
-  <button class="tab-btn" data-tab="quiz">📝 第二堂測驗</button>
+  <div id="tab-bar-row1">
+    <button class="tab-btn active" data-tab="intro">🏠 說明</button>
+    <button class="tab-btn" data-tab="lv1">① 變數計算</button>
+    <button class="tab-btn" data-tab="lv2">② 清單迴圈</button>
+    <button class="tab-btn" data-tab="lv3">③ 判斷邏輯</button>
+    <button class="tab-btn" data-tab="lv4">④ 函式</button>
+    <button class="tab-btn" data-tab="lv5">⑤ 猜拳 AI</button>
+    <button class="tab-btn" data-tab="sandbox">🧪 自由沙盒</button>
+  </div>
+  <div id="tab-bar-row2">
+    <button class="tab-btn quiz-btn" data-tab="quiz1">📖 第一堂測驗 — AI 入門理論</button>
+    <button class="tab-btn quiz-btn" data-tab="quiz">📝 第二堂測驗 — Python 實作</button>
+  </div>
 </nav>
 
 <main>
