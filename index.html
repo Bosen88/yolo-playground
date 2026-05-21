@@ -1194,12 +1194,46 @@ for ver, year in yolo_versions.items():
             <th onclick="sortTable('quiz2Score')">第二堂分數 ↕</th>
             <th>第二堂結果</th>
             <th onclick="sortTable('ts')">報到時間 ↕</th>
+            <th style="text-align:center">操作</th>
           </tr>
         </thead>
         <tbody id="score-table-body"></tbody>
       </table>
     </div>
     <p id="table-empty" style="text-align:center;color:var(--gray);padding:2rem;display:none">目前尚無資料</p>
+
+    <!-- 編輯 Modal -->
+    <div class="overlay hidden" id="overlay-edit" style="z-index:200">
+      <div class="modal-box" style="max-width:480px">
+        <h2>✏️ 編輯學員資料</h2>
+        <p class="sub">修改後按儲存，分數留空代表清除該次成績</p>
+        <input type="hidden" id="edit-empid">
+        <div class="form-group">
+          <label>部門別</label>
+          <select id="edit-dept">
+            <option>業務部</option><option>工程部</option><option>製造部</option>
+            <option>品保部</option><option>資訊部</option><option>研發部</option>
+            <option>採購部</option><option>人資部</option><option>財務部</option>
+            <option>行銷部</option><option>其他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>姓名</label>
+          <input type="text" id="edit-name" maxlength="20">
+        </div>
+        <div class="form-group">
+          <label>第一堂分數（0–100，留空代表清除）</label>
+          <input type="number" id="edit-q1" min="0" max="100" placeholder="留空 = 清除">
+        </div>
+        <div class="form-group">
+          <label>第二堂分數（0–100，留空代表清除）</label>
+          <input type="number" id="edit-q2" min="0" max="100" placeholder="留空 = 清除">
+        </div>
+        <p class="modal-error" id="edit-error" style="display:none">儲存失敗，請再試一次</p>
+        <button class="btn-primary" onclick="saveEdit()">💾 儲存</button>
+        <button style="width:100%;margin-top:.5rem;background:transparent;border:1.5px solid #ddd;border-radius:8px;padding:.7rem;cursor:pointer;font-family:inherit;color:var(--gray)" onclick="closeEdit()">取消</button>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -1447,6 +1481,7 @@ function renderTable() {
     const b2 = r.quiz2Score == null ? `<span class="badge-none">未作答</span>` :
                r.quiz2Score >= 70  ? `<span class="badge-pass">及格</span>`   : `<span class="badge-fail">未及格</span>`;
     const ts = r.ts ? new Date(r.ts).toLocaleString("zh-TW") : "—";
+    const eid = encodeURIComponent(r.empId);
     return `<tr>
       <td>${r.dept||""}</td>
       <td>${r.name||""}</td>
@@ -1456,8 +1491,79 @@ function renderTable() {
       <td style="text-align:center;font-weight:700">${q2}</td>
       <td>${b2}</td>
       <td style="font-size:.82rem;color:var(--gray)">${ts}</td>
+      <td style="text-align:center;white-space:nowrap">
+        <button onclick="openEdit('${eid}')"
+          style="background:var(--blue);color:#fff;border:none;border-radius:5px;padding:.28rem .65rem;cursor:pointer;font-size:.8rem;margin-right:.3rem">✏️</button>
+        <button onclick="deleteRecord('${eid}')"
+          style="background:var(--red);color:#fff;border:none;border-radius:5px;padding:.28rem .65rem;cursor:pointer;font-size:.8rem">🗑</button>
+      </td>
     </tr>`;
   }).join("");
+}
+
+// ===== 刪除記錄 =====
+async function deleteRecord(encodedEmpId) {
+  const empId = decodeURIComponent(encodedEmpId);
+  if (!confirm(`確定要刪除「${empId}」的所有資料？此動作無法復原。`)) return;
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/training_records?emp_id=eq.${encodeURIComponent(empId)}`,
+    { method: "DELETE", headers: { "apikey": SUPABASE_ANON, "Authorization": "Bearer " + SUPABASE_ANON } }
+  );
+  if (res.ok) {
+    await loadAdminData();
+  } else {
+    alert("刪除失敗，請確認 Supabase RLS 已允許 DELETE");
+  }
+}
+
+// ===== 編輯記錄 =====
+function openEdit(encodedEmpId) {
+  const empId = decodeURIComponent(encodedEmpId);
+  const r = adminData.find(x => x.empId === empId);
+  if (!r) return;
+  document.getElementById("edit-empid").value = empId;
+  document.getElementById("edit-dept").value  = r.dept || "";
+  document.getElementById("edit-name").value  = r.name || "";
+  document.getElementById("edit-q1").value    = r.quiz1Score != null ? r.quiz1Score : "";
+  document.getElementById("edit-q2").value    = r.quiz2Score != null ? r.quiz2Score : "";
+  document.getElementById("edit-error").style.display = "none";
+  document.getElementById("overlay-edit").classList.remove("hidden");
+}
+
+function closeEdit() {
+  document.getElementById("overlay-edit").classList.add("hidden");
+}
+
+async function saveEdit() {
+  const empId = document.getElementById("edit-empid").value;
+  const dept  = document.getElementById("edit-dept").value;
+  const name  = document.getElementById("edit-name").value.trim();
+  const q1raw = document.getElementById("edit-q1").value;
+  const q2raw = document.getElementById("edit-q2").value;
+
+  const payload = {
+    dept,
+    name,
+    quiz1_score: q1raw !== "" ? parseInt(q1raw) : null,
+    quiz2_score: q2raw !== "" ? parseInt(q2raw) : null,
+    updated_at:  new Date().toISOString(),
+  };
+
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/training_records?emp_id=eq.${encodeURIComponent(empId)}`,
+    {
+      method: "PATCH",
+      headers: { ...SB_HEADERS, "Prefer": "return=representation" },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (res.ok) {
+    closeEdit();
+    await loadAdminData();
+  } else {
+    document.getElementById("edit-error").style.display = "block";
+  }
 }
 
 async function exportCSV() {
