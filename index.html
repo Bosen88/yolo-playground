@@ -462,6 +462,34 @@
     line-height: 1.6;
     margin-top: .8rem;
   }
+  .btn-detect {
+    width: 100%;
+    padding: .75rem 1rem;
+    background: var(--orange);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-detect:hover { background: var(--orange-dark); }
+  .btn-detect:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+  .detector-status {
+    background: #11111b;
+    color: var(--code-fg);
+    border-radius: 6px;
+    padding: .65rem .75rem;
+    font-family: "Consolas", monospace;
+    font-size: .82rem;
+    line-height: 1.5;
+    margin-top: .8rem;
+  }
 
   /* ===== QUIZ ===== */
   .quiz-section { margin-bottom: 2rem; }
@@ -1153,7 +1181,7 @@ print(f"最終戰績：{wins}勝 {losses}敗 {draws}平")
   <div class="panel" id="tab-yolo-lab">
     <div class="lesson-card">
       <h2>⑥ YOLO 實作練習 <span class="tag hard">實作</span></h2>
-      <p>這個練習區用互動方式模擬 YOLO 推論結果。請調整信心門檻與模型大小，觀察偵測框數量、平均信心分數與推論時間的變化。</p>
+      <p>這個練習區會在瀏覽器中實際執行物件偵測模型。上傳圖片後，模型會產生偵測框、類別與 confidence，請調整門檻觀察結果變化。</p>
     </div>
 
     <div class="lab-grid">
@@ -1163,11 +1191,9 @@ print(f"最終戰績：{wins}勝 {losses}敗 {draws}平")
 
       <div class="lab-controls">
         <div class="lab-control">
-          <label for="model-select"><span>模型大小</span><span id="model-speed-label">快速</span></label>
+          <label for="model-select"><span>偵測引擎</span><span id="model-speed-label">載入中</span></label>
           <select id="model-select" onchange="renderDetections()">
-            <option value="nano">YOLO nano - 快速、適合邊緣裝置</option>
-            <option value="small" selected>YOLO small - 平衡速度與準確率</option>
-            <option value="medium">YOLO medium - 較準、推論較慢</option>
+            <option value="coco" selected>Browser AI - COCO-SSD 即時偵測</option>
           </select>
         </div>
 
@@ -1177,11 +1203,11 @@ print(f"最終戰績：{wins}勝 {losses}敗 {draws}平")
         </div>
 
         <div class="lab-control">
-          <label for="image-upload"><span>上傳圖片預覽</span><span>選填</span></label>
+          <label for="image-upload"><span>上傳圖片偵測</span><span>必填</span></label>
           <input type="file" id="image-upload" accept="image/*" onchange="loadDetectorImage(event)">
         </div>
 
-        <button class="btn-run" onclick="renderDetections()">▶ 重新推論</button>
+        <button class="btn-detect" id="btn-detect" onclick="runRealDetection()" disabled>▶ 執行圖片偵測</button>
 
         <div class="lab-stats">
           <div class="lab-stat"><strong id="det-count">0</strong><span>保留框數</span></div>
@@ -1189,8 +1215,9 @@ print(f"最終戰績：{wins}勝 {losses}敗 {draws}平")
           <div class="lab-stat"><strong id="det-latency">0ms</strong><span>推論時間</span></div>
         </div>
 
+        <div class="detector-status" id="detector-status">正在載入瀏覽器偵測模型...</div>
         <ul class="detection-list" id="detection-list"></ul>
-        <p class="lab-note">目前是教學用前端模擬器，適合課後練習 confidence threshold、bounding box 與模型取捨。未來可將「重新推論」改接真正 YOLO API。</p>
+        <p class="lab-note">這裡使用瀏覽器端 COCO-SSD 做真實物件偵測，不是預設假框。正式 YOLO 課程可把同一流程改接 YOLO API，讓學員比較 COCO 通用模型與自訓 YOLO 模型的差異。</p>
       </div>
     </div>
   </div>
@@ -1373,7 +1400,9 @@ for ver, year in yolo_versions.items():
   </main>
 </div>
 
-<!-- ===== PYODIDE ===== -->
+<!-- ===== BROWSER AI + PYODIDE ===== -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
 <script src="https://cdn.jsdelivr.net/pyodide/v0.27.3/full/pyodide.js"></script>
 
 <script>
@@ -2135,40 +2164,40 @@ function resetCode(id) {
 }
 
 // ============================================================
-// ⑧ YOLO 實作模擬器
+// ⑧ YOLO 實作：瀏覽器真實物件偵測
 // ============================================================
 
-const DETECTION_PRESETS = {
-  nano: [
-    { label: "person", conf: 0.86, box: [95, 110, 260, 510], color: "#2ECC71" },
-    { label: "helmet", conf: 0.62, box: [128, 70, 214, 138], color: "#FFC83D" },
-    { label: "tool", conf: 0.48, box: [625, 365, 780, 455], color: "#2E86DE" },
-    { label: "box", conf: 0.39, box: [515, 310, 700, 520], color: "#E74C3C" },
-  ],
-  small: [
-    { label: "person", conf: 0.91, box: [95, 110, 260, 510], color: "#2ECC71" },
-    { label: "helmet", conf: 0.76, box: [128, 70, 214, 138], color: "#FFC83D" },
-    { label: "tool", conf: 0.69, box: [625, 365, 780, 455], color: "#2E86DE" },
-    { label: "box", conf: 0.58, box: [515, 310, 700, 520], color: "#E74C3C" },
-    { label: "warning sign", conf: 0.44, box: [748, 120, 875, 240], color: "#FF8C1A" },
-  ],
-  medium: [
-    { label: "person", conf: 0.94, box: [95, 110, 260, 510], color: "#2ECC71" },
-    { label: "helmet", conf: 0.83, box: [128, 70, 214, 138], color: "#FFC83D" },
-    { label: "tool", conf: 0.78, box: [625, 365, 780, 455], color: "#2E86DE" },
-    { label: "box", conf: 0.72, box: [515, 310, 700, 520], color: "#E74C3C" },
-    { label: "warning sign", conf: 0.67, box: [748, 120, 875, 240], color: "#FF8C1A" },
-    { label: "glove", conf: 0.52, box: [282, 408, 365, 500], color: "#9B59B6" },
-  ]
-};
-
-const MODEL_META = {
-  nano: { speed: "快速", latency: 24 },
-  small: { speed: "平衡", latency: 46 },
-  medium: { speed: "較準", latency: 82 }
-};
+const DETECTION_COLORS = ["#2ECC71", "#FFC83D", "#2E86DE", "#E74C3C", "#FF8C1A", "#9B59B6", "#1ABC9C"];
 
 let detectorImage = null;
+let detectorModel = null;
+let detectorPredictions = [];
+let detectorLastLatency = 0;
+let detectorDrawInfo = { x: 0, y: 0, scale: 1 };
+
+function setDetectorStatus(text) {
+  const el = document.getElementById("detector-status");
+  if (el) el.textContent = text;
+}
+
+function setDetectorReady(ready) {
+  const btn = document.getElementById("btn-detect");
+  if (btn) btn.disabled = !ready || !detectorImage;
+  const label = document.getElementById("model-speed-label");
+  if (label) label.textContent = ready ? "真實推論" : "載入中";
+}
+
+async function initObjectDetector() {
+  try {
+    if (!window.cocoSsd) throw new Error("COCO-SSD library not loaded");
+    setDetectorStatus("正在載入 COCO-SSD 模型，第一次會需要幾秒...");
+    detectorModel = await cocoSsd.load({ base: "lite_mobilenet_v2" });
+    setDetectorStatus("模型已載入。請上傳一張圖片後執行偵測。");
+    setDetectorReady(true);
+  } catch (err) {
+    setDetectorStatus(`模型載入失敗：${err.message}`);
+  }
+}
 
 function loadDetectorImage(event) {
   const file = event.target.files && event.target.files[0];
@@ -2176,6 +2205,10 @@ function loadDetectorImage(event) {
   const img = new Image();
   img.onload = () => {
     detectorImage = img;
+    detectorPredictions = [];
+    detectorLastLatency = 0;
+    setDetectorReady(Boolean(detectorModel));
+    setDetectorStatus(detectorModel ? "圖片已載入。按「執行圖片偵測」開始推論。" : "圖片已載入，正在等待模型載入...");
     renderDetections();
   };
   img.src = URL.createObjectURL(file);
@@ -2188,72 +2221,92 @@ function drawDetectorBackground(ctx, canvas) {
     const h = detectorImage.height * scale;
     const x = (canvas.width - w) / 2;
     const y = (canvas.height - h) / 2;
+    detectorDrawInfo = { x, y, scale };
     ctx.fillStyle = "#171721";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(detectorImage, x, y, w, h);
     return;
   }
 
-  const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  grad.addColorStop(0, "#222436");
-  grad.addColorStop(1, "#30333f");
-  ctx.fillStyle = grad;
+  ctx.fillStyle = "#171721";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "#4b4f5f";
-  ctx.fillRect(0, 520, canvas.width, 80);
-  ctx.fillStyle = "#5c6070";
-  ctx.fillRect(500, 310, 210, 210);
-  ctx.fillStyle = "#7a8191";
-  ctx.fillRect(740, 110, 145, 150);
-  ctx.fillStyle = "#c8cdd8";
-  ctx.fillRect(135, 85, 75, 42);
-  ctx.fillStyle = "#29303a";
-  ctx.fillRect(120, 130, 120, 300);
-  ctx.fillStyle = "#3d4654";
-  ctx.fillRect(95, 250, 165, 260);
-  ctx.fillStyle = "#9da8bd";
-  ctx.fillRect(625, 365, 150, 90);
+  ctx.fillStyle = "#FFC83D";
+  ctx.font = "700 34px Microsoft JhengHei";
+  ctx.textAlign = "center";
+  ctx.fillText("上傳圖片後執行偵測", canvas.width / 2, canvas.height / 2 - 10);
   ctx.fillStyle = "#ffffff";
-  ctx.font = "700 30px Microsoft JhengHei";
-  ctx.fillText("YOLO demo scene", 36, 54);
+  ctx.font = "400 20px Microsoft JhengHei";
+  ctx.fillText("模型會真的輸出物件框、類別與 confidence", canvas.width / 2, canvas.height / 2 + 32);
+  ctx.textAlign = "start";
+}
+
+async function runRealDetection() {
+  if (!detectorModel) {
+    setDetectorStatus("模型尚未載入完成，請稍候。");
+    return;
+  }
+  if (!detectorImage) {
+    setDetectorStatus("請先上傳圖片。");
+    return;
+  }
+
+  const btn = document.getElementById("btn-detect");
+  btn.disabled = true;
+  btn.textContent = "推論中...";
+  setDetectorStatus("正在分析圖片...");
+
+  try {
+    const start = performance.now();
+    detectorPredictions = await detectorModel.detect(detectorImage);
+    detectorLastLatency = Math.round(performance.now() - start);
+    setDetectorStatus(`推論完成：模型回傳 ${detectorPredictions.length} 個候選框。調整 confidence threshold 可觀察過濾結果。`);
+    renderDetections();
+  } catch (err) {
+    setDetectorStatus(`推論失敗：${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "▶ 執行圖片偵測";
+  }
 }
 
 function renderDetections() {
   const canvas = document.getElementById("detector-canvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
-  const model = document.getElementById("model-select").value;
   const threshold = Number(document.getElementById("threshold-range").value);
-  const detections = DETECTION_PRESETS[model].filter(d => d.conf >= threshold);
+  const detections = detectorPredictions.filter(d => d.score >= threshold);
 
   drawDetectorBackground(ctx, canvas);
 
-  detections.forEach(d => {
-    const [x1, y1, x2, y2] = d.box;
-    const label = `${d.label} ${(d.conf * 100).toFixed(0)}%`;
-    ctx.strokeStyle = d.color;
+  detections.forEach((d, i) => {
+    const [bx, by, bw, bh] = d.bbox;
+    const x1 = detectorDrawInfo.x + bx * detectorDrawInfo.scale;
+    const y1 = detectorDrawInfo.y + by * detectorDrawInfo.scale;
+    const w = bw * detectorDrawInfo.scale;
+    const h = bh * detectorDrawInfo.scale;
+    const color = DETECTION_COLORS[i % DETECTION_COLORS.length];
+    const label = `${d.class} ${(d.score * 100).toFixed(0)}%`;
+    ctx.strokeStyle = color;
     ctx.lineWidth = 5;
-    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    ctx.strokeRect(x1, y1, w, h);
     ctx.font = "700 22px Microsoft JhengHei";
     const textWidth = ctx.measureText(label).width + 18;
-    ctx.fillStyle = d.color;
+    ctx.fillStyle = color;
     ctx.fillRect(x1, Math.max(0, y1 - 34), textWidth, 34);
     ctx.fillStyle = "#fff";
     ctx.fillText(label, x1 + 9, Math.max(24, y1 - 10));
   });
 
   const avg = detections.length
-    ? detections.reduce((sum, d) => sum + d.conf, 0) / detections.length
+    ? detections.reduce((sum, d) => sum + d.score, 0) / detections.length
     : 0;
   document.getElementById("threshold-label").textContent = threshold.toFixed(2);
-  document.getElementById("model-speed-label").textContent = MODEL_META[model].speed;
   document.getElementById("det-count").textContent = detections.length;
   document.getElementById("det-avg").textContent = avg.toFixed(2);
-  document.getElementById("det-latency").textContent = `${MODEL_META[model].latency}ms`;
+  document.getElementById("det-latency").textContent = detectorLastLatency ? `${detectorLastLatency}ms` : "—";
   document.getElementById("detection-list").innerHTML = detections.length
-    ? detections.map(d => `<li><span>${d.label}</span><strong>${d.conf.toFixed(2)}</strong></li>`).join("")
-    : `<li><span>沒有通過門檻的偵測框</span><strong>調低門檻</strong></li>`;
+    ? detections.map(d => `<li><span>${d.class}</span><strong>${d.score.toFixed(2)}</strong></li>`).join("")
+    : `<li><span>${detectorPredictions.length ? "沒有通過門檻的偵測框" : "尚未執行偵測"}</span><strong>${detectorPredictions.length ? "調低門檻" : "上傳圖片"}</strong></li>`;
 }
 
 // ============================================================
@@ -2286,6 +2339,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
   document.querySelectorAll(".btn-run").forEach(b => b.disabled = true);
   renderDetections();
+  initObjectDetector();
 });
 </script>
 </body>

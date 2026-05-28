@@ -16,7 +16,7 @@
 - 課後測驗：
   - 第一堂：AI 與 YOLO 入門理論
   - 第二堂：Python 與 YOLO 實作
-- YOLO 實作練習：可調整 confidence threshold、模型大小、上傳圖片預覽，觀察偵測框與推論統計。
+- YOLO 實作練習：上傳圖片後會在瀏覽器中實際執行 COCO-SSD 物件偵測，可調整 confidence threshold，觀察偵測框與推論統計。
 - 成績儲存：透過後端 API 寫入 Supabase，前端不直接暴露 Supabase key。
 - 管理後台：透過 Vercel API 驗證管理者帳密後，可檢視統計、篩選學員、匯出 CSV、編輯或刪除紀錄。
 - Vercel 部署：目前是單頁靜態網站，可直接部署到 Vercel。
@@ -107,7 +107,7 @@ ADMIN_SESSION_SECRET=管理 session 簽章密鑰
 
 可加入的實作任務：
 
-- 上傳圖片，呼叫 YOLO API 看偵測框。
+- 上傳圖片，先用瀏覽器端模型看偵測框，再呼叫 YOLO API 比較差異。
 - 調整 confidence threshold，觀察偵測結果變化。
 - 比較不同 YOLO 模型大小，例如 nano / small / medium。
 - 標註資料集範例，理解 bounding box 與 class label。
