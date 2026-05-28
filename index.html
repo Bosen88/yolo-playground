@@ -340,6 +340,18 @@
   }
   .hint-block strong { color: var(--orange-dark); }
 
+  .learning-note {
+    background: #EAF4FF;
+    border-left: 4px solid var(--blue);
+    border-radius: 6px;
+    padding: .7rem 1rem;
+    font-size: .88rem;
+    color: #24435f;
+    margin: .6rem 0 1rem;
+    line-height: 1.7;
+  }
+  .learning-note strong { color: var(--blue); }
+
   details.hint-details summary {
     cursor: pointer; font-size: .88rem; color: var(--orange-dark); font-weight: 600;
     user-select: none; list-style: none;
@@ -802,9 +814,10 @@
       <p>Python 可以當計算機用。<strong>變數</strong>就像一個有名字的盒子，可以存放數字或文字。<br>
       試試看修改數字，讓程式算出你想要的答案。</p>
     </div>
+    <div class="learning-note"><strong>這關目標：</strong>先看懂「資料放進變數 → 用公式計算 → 用 print 顯示結果」。YOLO 後面也會一直用這種方式保存信心分數、座標和類別名稱。</div>
 
     <div class="challenge-title"><div class="num">1</div><h3>讓 Python 幫你算薪資！</h3></div>
-    <div class="hint-block">任務：把 <code>hourly_rate</code>（時薪）和 <code>hours</code>（工時）填入你自己的數字，印出月薪。</div>
+    <div class="hint-block">任務：先按一次執行看結果，再把 <code>hourly_rate</code>（時薪）和 <code>hours</code>（工時）換成你自己的數字。</div>
     <div class="editor-wrap">
       <div class="editor-titlebar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><span>task1.py</span></div>
       <textarea class="code-input" id="code-lv1-1" spellcheck="false">
@@ -819,7 +832,7 @@ print("工時:", hours, "小時")
 print("月薪:", monthly_salary, "元")
 
 # 🚀 挑戰：加上年薪計算！
-# annual_salary = ???
+# annual_salary = monthly_salary * 12
 # print("年薪:", annual_salary, "元")
 </textarea>
     </div>
@@ -835,14 +848,14 @@ print("月薪:", monthly_salary, "元")
     <hr style="margin:1.5rem 0;border:none;border-top:2px dashed #FFD580">
 
     <div class="challenge-title"><div class="num">2</div><h3>溫度換算 — 攝氏 ↔ 華氏</h3></div>
-    <div class="hint-block">公式：華氏 = 攝氏 × 9/5 + 32<br>任務：把 37°C（人體溫度）換成華氏，看看是幾度？</div>
+    <div class="hint-block">公式：華氏 = 攝氏 × 9/5 + 32<br>任務：目前答案故意是 0，請把 <code>fahrenheit = 0</code> 改成正確公式。</div>
     <div class="editor-wrap">
       <div class="editor-titlebar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><span>task2.py</span></div>
       <textarea class="code-input" id="code-lv1-2" spellcheck="false">
 celsius = 37   # 攝氏溫度
 
-# 📌 在這裡寫換算公式
-fahrenheit = ???
+# 📌 把 0 換成公式：celsius * 9 / 5 + 32
+fahrenheit = 0
 
 print(f"攝氏 {celsius}°C = 華氏 {fahrenheit}°F")
 </textarea>
@@ -864,9 +877,10 @@ print(f"攝氏 {celsius}°C = 華氏 {fahrenheit}°F")
       <p>List（清單）讓你把很多資料放在一起。for 迴圈讓你一次處理全部。<br>
       在 YOLO 裡，偵測到的「所有物件」就是一個 List！</p>
     </div>
+    <div class="learning-note"><strong>這關目標：</strong>理解 YOLO 不只回傳一個答案，而是回傳一整批偵測結果。List 和 for 迴圈就是處理「一批資料」的基本功。</div>
 
     <div class="challenge-title"><div class="num">1</div><h3>處理偵測結果清單</h3></div>
-    <div class="hint-block">想像 YOLO 偵測到了下面這些物件。用 for 迴圈把每個都印出來。</div>
+    <div class="hint-block">任務：先觀察 <code>detections</code> 裡有幾個物件，再用 for 迴圈把每個偵測結果印出來。</div>
     <div class="editor-wrap">
       <div class="editor-titlebar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><span>list1.py</span></div>
       <textarea class="code-input" id="code-lv2-1" spellcheck="false">
@@ -878,7 +892,7 @@ for item in detections:
     print(" -", item)
 
 # 🚀 挑戰：用 len() 印出「共偵測到 X 個物件」
-# print("共偵測到", ???, "個物件")
+# print("共偵測到", len(detections), "個物件")
 </textarea>
     </div>
     <div class="btn-row">
@@ -893,7 +907,7 @@ for item in detections:
     <hr style="margin:1.5rem 0;border:none;border-top:2px dashed #FFD580">
 
     <div class="challenge-title"><div class="num">2</div><h3>計算信心分數平均值</h3></div>
-    <div class="hint-block">YOLO 每個偵測框都有「信心分數」(0~1)。用迴圈加總後算平均。</div>
+    <div class="hint-block">任務：YOLO 每個偵測框都有「信心分數」(0~1)。請觀察平均值、最高值、最低值代表什麼。</div>
     <div class="editor-wrap">
       <div class="editor-titlebar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><span>list2.py</span></div>
       <textarea class="code-input" id="code-lv2-2" spellcheck="false">
@@ -930,6 +944,7 @@ print(f"平均信心分數: {average:.2f}")   # .2f = 小數點兩位
       <p>if / elif / else 讓程式做「如果...就...否則...」的判斷。<br>
       YOLO 判斷信心分數是否夠高，就是用這個！</p>
     </div>
+    <div class="learning-note"><strong>這關目標：</strong>把模型輸出的數字變成決策。例如 confidence 太低就不顯示，confidence 高才讓使用者相信這個偵測框。</div>
 
     <div class="challenge-title"><div class="num">1</div><h3>信心門檻過濾</h3></div>
     <div class="hint-block">只有信心 ≥ 0.8 的偵測才顯示。修改 <code>threshold</code> 看看結果有什麼不同。</div>
@@ -965,16 +980,16 @@ for d in detections:
     <hr style="margin:1.5rem 0;border:none;border-top:2px dashed #FFD580">
 
     <div class="challenge-title"><div class="num">2</div><h3>信心等級評分</h3></div>
-    <div class="hint-block">用 if / elif / else 把信心分數分成三個等級：高 / 中 / 低。</div>
+    <div class="hint-block">任務：目前中等門檻故意設太高，請把 <code>middle_threshold</code> 改成合理數字，讓 0.76 被判斷為「中」。</div>
     <div class="editor-wrap">
       <div class="editor-titlebar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><span>grade.py</span></div>
       <textarea class="code-input" id="code-lv3-2" spellcheck="false">
 conf = 0.76   # 📌 試著改成不同的值：0.9, 0.65, 0.3
+middle_threshold = 0.85  # 📌 這裡故意不合理，請改成 0.6
 
-# 📌 補上 elif 和 else 的條件
 if conf >= 0.85:
     grade = "高 🟢"
-elif conf >= ???:
+elif conf >= middle_threshold:
     grade = "中 🟡"
 else:
     grade = "低 🔴"
@@ -988,7 +1003,7 @@ print(f"信心分數 {conf:.2f} → 等級：{grade}")
     </div>
     <div class="output-box empty" id="out-lv3-2">→ 按「執行」看結果</div>
     <details class="hint-details"><summary></summary>
-      <div class="hint-block">中等的範圍是 0.6 ~ 0.85，所以 <code>elif conf >= 0.6:</code></div>
+      <div class="hint-block">中等的範圍是 0.6 ~ 0.85，所以 <code>middle_threshold = 0.6</code>。這樣 0.76 就會進入「中」。</div>
     </details>
   </div>
 
@@ -999,6 +1014,7 @@ print(f"信心分數 {conf:.2f} → 等級：{grade}")
       <p>函式就是「幫一件事取名字」的方法。定義一次，到處可以用。<br>
       YOLO 的核心計算（IoU、NMS）都是用函式寫的。</p>
     </div>
+    <div class="learning-note"><strong>這關目標：</strong>把一段會重複使用的邏輯包成函式。之後不管是算 IoU、判斷手勢，還是過濾偵測結果，都可以用同樣思路整理程式。</div>
 
     <div class="challenge-title"><div class="num">1</div><h3>寫一個計算 IoU 的函式</h3></div>
     <div class="hint-block">
@@ -1058,19 +1074,19 @@ else:
     <hr style="margin:1.5rem 0;border:none;border-top:2px dashed #FFD580">
 
     <div class="challenge-title"><div class="num">2</div><h3>完成 get_grade() 函式</h3></div>
-    <div class="hint-block">把上一關的「信心等級」邏輯包成函式，讓它可以重複使用。</div>
+    <div class="hint-block">任務：目前函式可以執行，但中等門檻與低分回傳文字是故意留給你修正的。</div>
     <div class="editor-wrap">
       <div class="editor-titlebar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><span>grade_fn.py</span></div>
       <textarea class="code-input" id="code-lv4-2" spellcheck="false">
 def get_grade(conf):
-    # 📌 把關卡3的判斷邏輯寫在這裡
+    # 📌 把關卡3的判斷邏輯包成函式
     # 回傳 "高", "中", 或 "低"
     if conf >= 0.85:
         return "高 🟢"
-    elif ???:
+    elif conf >= 0.85:  # 📌 這裡不合理，請改成 0.6
         return "中 🟡"
     else:
-        return ???
+        return "請改成低 🔴"
 
 
 # 測試：對所有偵測批次評等
@@ -1103,13 +1119,14 @@ for s in scores:
       <p>綜合前四關的技能，寫出完整的猜拳遊戲邏輯！<br>
       這就是我們 YOLO 實作中，手勢辨識遊戲的核心 <code>judge()</code> 函式。</p>
     </div>
+    <div class="learning-note"><strong>這關目標：</strong>把變數、List、if 判斷、函式全部串起來。真實 YOLO 遊戲也是先辨識手勢，再用一個規則函式決定勝負。</div>
 
     <div class="challenge-title"><div class="num">✊✌✋</div><h3>完成猜拳遊戲</h3></div>
     <div class="hint-block">
       任務：<br>
-      1. 完成 <code>judge(player, ai)</code> 函式，回傳 "你贏了！" / "AI 贏了！" / "平手！"<br>
-      2. 讓 AI 隨機出拳<br>
-      3. 跑完五局，統計勝負
+      1. 先執行一次，觀察目前除了平手之外幾乎都判成 AI 贏<br>
+      2. 修正 <code>judge(player, ai)</code> 裡的玩家勝利條件<br>
+      3. 跑完五局，確認勝敗統計有跟著改變
     </div>
     <div class="editor-wrap">
       <div class="editor-titlebar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><span>rps_game.py</span></div>
@@ -1132,7 +1149,7 @@ def judge(player, ai):
     """回傳 '你贏了！' / 'AI 贏了！' / '平手！'"""
     if player == ai:
         return "平手！"
-    elif ???:          # 📌 玩家贏的條件
+    elif False:        # 📌 請把 False 改成 WIN[player] == ai
         return "你贏了！ 🎉"
     else:
         return "AI 贏了！ 🤖"
