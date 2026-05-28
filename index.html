@@ -376,6 +376,93 @@
   .tag.hard { background: #FFD0D0; color: var(--red); }
   .tag.medium { background: #FFE8B2; color: #A05A00; }
 
+  /* ===== YOLO LAB ===== */
+  .lab-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(260px, .75fr);
+    gap: 1rem;
+    align-items: start;
+  }
+  .detector-stage {
+    background: var(--white);
+    border-radius: 8px;
+    padding: .8rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  #detector-canvas {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border-radius: 6px;
+    background: #171721;
+    border: 1px solid #ddd;
+  }
+  .lab-controls {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .lab-control { margin-bottom: 1rem; }
+  .lab-control label {
+    display: flex;
+    justify-content: space-between;
+    gap: .8rem;
+    font-size: .88rem;
+    font-weight: 700;
+    margin-bottom: .4rem;
+  }
+  .lab-control input[type=range],
+  .lab-control select,
+  .lab-control input[type=file] {
+    width: 100%;
+    font-family: inherit;
+  }
+  .lab-control select {
+    border: 1.5px solid #ddd;
+    border-radius: 6px;
+    padding: .45rem .6rem;
+    outline: none;
+  }
+  .lab-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .5rem;
+    margin: .8rem 0 1rem;
+  }
+  .lab-stat {
+    background: var(--cream);
+    border-radius: 6px;
+    padding: .65rem .45rem;
+    text-align: center;
+  }
+  .lab-stat strong {
+    display: block;
+    font-size: 1.35rem;
+    color: var(--orange-dark);
+  }
+  .lab-stat span { font-size: .72rem; color: var(--gray); }
+  .detection-list {
+    list-style: none;
+    display: grid;
+    gap: .45rem;
+  }
+  .detection-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: .8rem;
+    padding: .45rem .55rem;
+    border-radius: 6px;
+    background: #f7f7f7;
+    font-size: .84rem;
+  }
+  .lab-note {
+    font-size: .82rem;
+    color: var(--gray);
+    line-height: 1.6;
+    margin-top: .8rem;
+  }
+
   /* ===== QUIZ ===== */
   .quiz-section { margin-bottom: 2rem; }
   .quiz-section h3 {
@@ -537,6 +624,7 @@
     .tab-btn { padding: .55rem .8rem; font-size: .8rem; }
     textarea.code-input { font-size: .85rem; }
     .modal-box { padding: 1.5rem 1.2rem; }
+    .lab-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -615,6 +703,7 @@
     <button class="tab-btn" data-tab="lv3">③ 判斷邏輯</button>
     <button class="tab-btn" data-tab="lv4">④ 函式</button>
     <button class="tab-btn" data-tab="lv5">⑤ 猜拳 AI</button>
+    <button class="tab-btn" data-tab="yolo-lab">⑥ YOLO 實作</button>
     <button class="tab-btn" data-tab="sandbox">🧪 自由沙盒</button>
   </div>
   <div id="tab-bar-row2">
@@ -654,6 +743,7 @@
         <strong>③ 判斷邏輯</strong> → if/elif/else，讓程式像 YOLO 一樣做決策<br>
         <strong>④ 函式</strong> → 把程式包成可重複使用的小機器（如 IoU 計算）<br>
         <strong>⑤ 猜拳 AI</strong> → 綜合練習：寫出完整遊戲判斷邏輯<br>
+        <strong>⑥ YOLO 實作</strong> → 調整信心門檻、觀察偵測框、比較模型設定<br>
         <strong>🧪 自由沙盒</strong> → 想跑什麼就跑什麼
       </p>
     </div>
@@ -1059,6 +1149,52 @@ print(f"最終戰績：{wins}勝 {losses}敗 {draws}平")
     </details>
   </div>
 
+  <!-- ===== YOLO 實作 ===== -->
+  <div class="panel" id="tab-yolo-lab">
+    <div class="lesson-card">
+      <h2>⑥ YOLO 實作練習 <span class="tag hard">實作</span></h2>
+      <p>這個練習區用互動方式模擬 YOLO 推論結果。請調整信心門檻與模型大小，觀察偵測框數量、平均信心分數與推論時間的變化。</p>
+    </div>
+
+    <div class="lab-grid">
+      <div class="detector-stage">
+        <canvas id="detector-canvas" width="960" height="600"></canvas>
+      </div>
+
+      <div class="lab-controls">
+        <div class="lab-control">
+          <label for="model-select"><span>模型大小</span><span id="model-speed-label">快速</span></label>
+          <select id="model-select" onchange="renderDetections()">
+            <option value="nano">YOLO nano - 快速、適合邊緣裝置</option>
+            <option value="small" selected>YOLO small - 平衡速度與準確率</option>
+            <option value="medium">YOLO medium - 較準、推論較慢</option>
+          </select>
+        </div>
+
+        <div class="lab-control">
+          <label for="threshold-range"><span>Confidence threshold</span><span id="threshold-label">0.50</span></label>
+          <input type="range" id="threshold-range" min="0.1" max="0.95" step="0.05" value="0.5" oninput="renderDetections()">
+        </div>
+
+        <div class="lab-control">
+          <label for="image-upload"><span>上傳圖片預覽</span><span>選填</span></label>
+          <input type="file" id="image-upload" accept="image/*" onchange="loadDetectorImage(event)">
+        </div>
+
+        <button class="btn-run" onclick="renderDetections()">▶ 重新推論</button>
+
+        <div class="lab-stats">
+          <div class="lab-stat"><strong id="det-count">0</strong><span>保留框數</span></div>
+          <div class="lab-stat"><strong id="det-avg">0.00</strong><span>平均信心</span></div>
+          <div class="lab-stat"><strong id="det-latency">0ms</strong><span>推論時間</span></div>
+        </div>
+
+        <ul class="detection-list" id="detection-list"></ul>
+        <p class="lab-note">目前是教學用前端模擬器，適合課後練習 confidence threshold、bounding box 與模型取捨。未來可將「重新推論」改接真正 YOLO API。</p>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== 沙盒 ===== -->
   <div class="panel" id="tab-sandbox">
     <div class="lesson-card">
@@ -1242,46 +1378,34 @@ for ver, year in yolo_versions.items():
 
 <script>
 // ============================================================
-// ① 後端：Supabase
+// ① 後端 API
 // ============================================================
-
-const SUPABASE_URL = "https://ykvrgwkibxvvvlzgxpty.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrdnJnd2tpYnh2dnZsemd4cHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMzE3ODIsImV4cCI6MjA5NDkwNzc4Mn0.SdmMt7GobkZu3saxyS7hN2gxDyAnvR7jqIyPIlPyYiQ";
-const SB_HEADERS = {
-  "Content-Type": "application/json",
-  "apikey": SUPABASE_ANON,
-  "Authorization": "Bearer " + SUPABASE_ANON,
-  "Prefer": "resolution=merge-duplicates,return=representation"
-};
 
 async function upsertRecord(patch) {
   const payload = {
-    emp_id:      patch.empId,
-    dept:        patch.dept,
-    name:        patch.name,
-    quiz1_score: patch.quiz1Score != null ? patch.quiz1Score : undefined,
-    quiz2_score: patch.quiz2Score != null ? patch.quiz2Score : undefined,
-    updated_at:  new Date().toISOString(),
+    empId: patch.empId,
+    dept: patch.dept,
+    name: patch.name,
+    quiz1Score: patch.quiz1Score != null ? patch.quiz1Score : undefined,
+    quiz2Score: patch.quiz2Score != null ? patch.quiz2Score : undefined,
   };
-  // remove undefined keys
   Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
 
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/training_records`, {
+  const res = await fetch("/api/training-records", {
     method: "POST",
-    headers: SB_HEADERS,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const err = await res.text();
-    console.error("Supabase upsert error:", err);
+    console.error("Record upsert error:", err);
   }
 }
 
 async function getAllRecords() {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/training_records?select=*&order=created_at.asc`,
-    { headers: { "apikey": SUPABASE_ANON, "Authorization": "Bearer " + SUPABASE_ANON } }
-  );
+  const res = await fetch("/api/training-records", {
+    headers: { "x-admin-token": adminToken || "" }
+  });
   if (!res.ok) return [];
   return await res.json();
 }
@@ -1326,9 +1450,8 @@ async function submitRegister() {
 // ③ Admin 認證
 // ============================================================
 
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "yolo@2024";
 let isAdmin = false;
+let adminToken = sessionStorage.getItem("yoloAdminToken") || "";
 
 function showAdminLogin() {
   document.getElementById("overlay-admin-login").classList.remove("hidden");
@@ -1337,15 +1460,34 @@ function hideAdminLogin() {
   document.getElementById("overlay-admin-login").classList.add("hidden");
   document.getElementById("admin-login-error").style.display = "none";
 }
-function doAdminLogin() {
+async function doAdminLogin() {
   const u = document.getElementById("admin-user").value.trim();
   const p = document.getElementById("admin-pass").value;
-  if (u === ADMIN_USER && p === ADMIN_PASS) {
+  const err = document.getElementById("admin-login-error");
+  const btn = document.querySelector("#overlay-admin-login .btn-primary");
+  err.style.display = "none";
+  btn.disabled = true;
+  btn.textContent = "登入中...";
+
+  try {
+    const res = await fetch("/api/admin-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: u, password: p })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.token) throw new Error("login failed");
     isAdmin = true;
+    adminToken = data.token;
+    sessionStorage.setItem("yoloAdminToken", adminToken);
     hideAdminLogin();
     openAdmin();
-  } else {
-    document.getElementById("admin-login-error").style.display = "block";
+  } catch(e) {
+    err.textContent = "帳號或密碼錯誤，或尚未設定後端管理登入";
+    err.style.display = "block";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "🔑 登入";
   }
 }
 function openAdmin() {
@@ -1384,7 +1526,7 @@ function normalize(r) {
 
 async function loadAdminData() {
   document.getElementById("score-table-body").innerHTML =
-    `<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:var(--gray)">載入中...</td></tr>`;
+    `<tr><td colspan="9" style="text-align:center;padding:1.5rem;color:var(--gray)">載入中...</td></tr>`;
   const raw = await getAllRecords();
   adminData = raw.map(normalize);
   renderStats();
@@ -1505,14 +1647,14 @@ function renderTable() {
 async function deleteRecord(encodedEmpId) {
   const empId = decodeURIComponent(encodedEmpId);
   if (!confirm(`確定要刪除「${empId}」的所有資料？此動作無法復原。`)) return;
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/training_records?emp_id=eq.${encodeURIComponent(empId)}`,
-    { method: "DELETE", headers: { "apikey": SUPABASE_ANON, "Authorization": "Bearer " + SUPABASE_ANON } }
-  );
+  const res = await fetch(`/api/training-records?empId=${encodeURIComponent(empId)}`, {
+    method: "DELETE",
+    headers: { "x-admin-token": adminToken || "" }
+  });
   if (res.ok) {
     await loadAdminData();
   } else {
-    alert("刪除失敗，請確認 Supabase RLS 已允許 DELETE");
+    alert("刪除失敗，請重新登入管理後台");
   }
 }
 
@@ -1544,19 +1686,18 @@ async function saveEdit() {
   const payload = {
     dept,
     name,
-    quiz1_score: q1raw !== "" ? parseInt(q1raw) : null,
-    quiz2_score: q2raw !== "" ? parseInt(q2raw) : null,
-    updated_at:  new Date().toISOString(),
+    quiz1Score: q1raw !== "" ? parseInt(q1raw) : null,
+    quiz2Score: q2raw !== "" ? parseInt(q2raw) : null,
   };
 
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/training_records?emp_id=eq.${encodeURIComponent(empId)}`,
-    {
-      method: "PATCH",
-      headers: { ...SB_HEADERS, "Prefer": "return=representation" },
-      body: JSON.stringify(payload),
-    }
-  );
+  const res = await fetch(`/api/training-records?empId=${encodeURIComponent(empId)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-token": adminToken || ""
+    },
+    body: JSON.stringify(payload),
+  });
 
   if (res.ok) {
     closeEdit();
@@ -1994,13 +2135,135 @@ function resetCode(id) {
 }
 
 // ============================================================
-// ⑧ Tab 切換
+// ⑧ YOLO 實作模擬器
+// ============================================================
+
+const DETECTION_PRESETS = {
+  nano: [
+    { label: "person", conf: 0.86, box: [95, 110, 260, 510], color: "#2ECC71" },
+    { label: "helmet", conf: 0.62, box: [128, 70, 214, 138], color: "#FFC83D" },
+    { label: "tool", conf: 0.48, box: [625, 365, 780, 455], color: "#2E86DE" },
+    { label: "box", conf: 0.39, box: [515, 310, 700, 520], color: "#E74C3C" },
+  ],
+  small: [
+    { label: "person", conf: 0.91, box: [95, 110, 260, 510], color: "#2ECC71" },
+    { label: "helmet", conf: 0.76, box: [128, 70, 214, 138], color: "#FFC83D" },
+    { label: "tool", conf: 0.69, box: [625, 365, 780, 455], color: "#2E86DE" },
+    { label: "box", conf: 0.58, box: [515, 310, 700, 520], color: "#E74C3C" },
+    { label: "warning sign", conf: 0.44, box: [748, 120, 875, 240], color: "#FF8C1A" },
+  ],
+  medium: [
+    { label: "person", conf: 0.94, box: [95, 110, 260, 510], color: "#2ECC71" },
+    { label: "helmet", conf: 0.83, box: [128, 70, 214, 138], color: "#FFC83D" },
+    { label: "tool", conf: 0.78, box: [625, 365, 780, 455], color: "#2E86DE" },
+    { label: "box", conf: 0.72, box: [515, 310, 700, 520], color: "#E74C3C" },
+    { label: "warning sign", conf: 0.67, box: [748, 120, 875, 240], color: "#FF8C1A" },
+    { label: "glove", conf: 0.52, box: [282, 408, 365, 500], color: "#9B59B6" },
+  ]
+};
+
+const MODEL_META = {
+  nano: { speed: "快速", latency: 24 },
+  small: { speed: "平衡", latency: 46 },
+  medium: { speed: "較準", latency: 82 }
+};
+
+let detectorImage = null;
+
+function loadDetectorImage(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = () => {
+    detectorImage = img;
+    renderDetections();
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+function drawDetectorBackground(ctx, canvas) {
+  if (detectorImage) {
+    const scale = Math.min(canvas.width / detectorImage.width, canvas.height / detectorImage.height);
+    const w = detectorImage.width * scale;
+    const h = detectorImage.height * scale;
+    const x = (canvas.width - w) / 2;
+    const y = (canvas.height - h) / 2;
+    ctx.fillStyle = "#171721";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(detectorImage, x, y, w, h);
+    return;
+  }
+
+  const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  grad.addColorStop(0, "#222436");
+  grad.addColorStop(1, "#30333f");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#4b4f5f";
+  ctx.fillRect(0, 520, canvas.width, 80);
+  ctx.fillStyle = "#5c6070";
+  ctx.fillRect(500, 310, 210, 210);
+  ctx.fillStyle = "#7a8191";
+  ctx.fillRect(740, 110, 145, 150);
+  ctx.fillStyle = "#c8cdd8";
+  ctx.fillRect(135, 85, 75, 42);
+  ctx.fillStyle = "#29303a";
+  ctx.fillRect(120, 130, 120, 300);
+  ctx.fillStyle = "#3d4654";
+  ctx.fillRect(95, 250, 165, 260);
+  ctx.fillStyle = "#9da8bd";
+  ctx.fillRect(625, 365, 150, 90);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 30px Microsoft JhengHei";
+  ctx.fillText("YOLO demo scene", 36, 54);
+}
+
+function renderDetections() {
+  const canvas = document.getElementById("detector-canvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const model = document.getElementById("model-select").value;
+  const threshold = Number(document.getElementById("threshold-range").value);
+  const detections = DETECTION_PRESETS[model].filter(d => d.conf >= threshold);
+
+  drawDetectorBackground(ctx, canvas);
+
+  detections.forEach(d => {
+    const [x1, y1, x2, y2] = d.box;
+    const label = `${d.label} ${(d.conf * 100).toFixed(0)}%`;
+    ctx.strokeStyle = d.color;
+    ctx.lineWidth = 5;
+    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    ctx.font = "700 22px Microsoft JhengHei";
+    const textWidth = ctx.measureText(label).width + 18;
+    ctx.fillStyle = d.color;
+    ctx.fillRect(x1, Math.max(0, y1 - 34), textWidth, 34);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(label, x1 + 9, Math.max(24, y1 - 10));
+  });
+
+  const avg = detections.length
+    ? detections.reduce((sum, d) => sum + d.conf, 0) / detections.length
+    : 0;
+  document.getElementById("threshold-label").textContent = threshold.toFixed(2);
+  document.getElementById("model-speed-label").textContent = MODEL_META[model].speed;
+  document.getElementById("det-count").textContent = detections.length;
+  document.getElementById("det-avg").textContent = avg.toFixed(2);
+  document.getElementById("det-latency").textContent = `${MODEL_META[model].latency}ms`;
+  document.getElementById("detection-list").innerHTML = detections.length
+    ? detections.map(d => `<li><span>${d.label}</span><strong>${d.conf.toFixed(2)}</strong></li>`).join("")
+    : `<li><span>沒有通過門檻的偵測框</span><strong>調低門檻</strong></li>`;
+}
+
+// ============================================================
+// ⑨ Tab 切換
 // ============================================================
 
 const TAB_MAP = {
   intro: "tab-intro", lv1: "tab-lv1", lv2: "tab-lv2",
   lv3: "tab-lv3", lv4: "tab-lv4", lv5: "tab-lv5",
-  sandbox: "tab-sandbox", quiz1: "tab-quiz1", quiz: "tab-quiz",
+  "yolo-lab": "tab-yolo-lab", sandbox: "tab-sandbox", quiz1: "tab-quiz1", quiz: "tab-quiz",
 };
 
 function activateTab(name) {
@@ -2022,6 +2285,7 @@ window.addEventListener("DOMContentLoaded", () => {
     DEFAULT_CODE[id] = el.value;
   });
   document.querySelectorAll(".btn-run").forEach(b => b.disabled = true);
+  renderDetections();
 });
 </script>
 </body>
