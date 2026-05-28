@@ -352,6 +352,62 @@
   }
   .learning-note strong { color: var(--blue); }
 
+  .progress-panel {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .progress-panel h3 {
+    font-size: 1rem;
+    color: var(--orange-dark);
+    margin-bottom: .7rem;
+  }
+  .progress-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: .55rem;
+  }
+  .progress-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .5rem;
+    background: #f7f7f7;
+    border-radius: 6px;
+    padding: .55rem .7rem;
+    font-size: .84rem;
+  }
+  .progress-item.done {
+    background: #E8F8F0;
+    color: #176d3d;
+    font-weight: 700;
+  }
+  .progress-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    margin-left: .35rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.18);
+    color: rgba(255,255,255,.8);
+    font-size: .72rem;
+  }
+  .tab-btn.done .progress-mini {
+    background: var(--green);
+    color: var(--white);
+  }
+  .error-help {
+    margin-top: .7rem;
+    border-top: 1px solid rgba(255,255,255,.15);
+    padding-top: .65rem;
+    color: #FFD580;
+    white-space: pre-wrap;
+  }
+
   details.hint-details summary {
     cursor: pointer; font-size: .88rem; color: var(--orange-dark); font-weight: 600;
     user-select: none; list-style: none;
@@ -786,6 +842,10 @@
         <strong>⑥ YOLO 實作</strong> → 調整信心門檻、觀察偵測框、比較模型設定<br>
         <strong>🧪 自由沙盒</strong> → 想跑什麼就跑什麼
       </p>
+    </div>
+    <div class="progress-panel">
+      <h3>我的練習進度</h3>
+      <div class="progress-grid" id="progress-grid"></div>
     </div>
     <div class="lesson-card" style="border-left-color:var(--green)">
       <h2>⚡ 使用說明</h2>
@@ -1462,6 +1522,71 @@ async function getAllRecords() {
 
 let currentUser = null; // { dept, name, empId }
 
+const PROGRESS_ITEMS = [
+  { key: "lv1", label: "① 變數計算", tab: "lv1", exercises: ["lv1-1", "lv1-2"] },
+  { key: "lv2", label: "② 清單迴圈", tab: "lv2", exercises: ["lv2-1", "lv2-2"] },
+  { key: "lv3", label: "③ 判斷邏輯", tab: "lv3", exercises: ["lv3-1", "lv3-2"] },
+  { key: "lv4", label: "④ 函式", tab: "lv4", exercises: ["lv4-1", "lv4-2"] },
+  { key: "lv5", label: "⑤ 猜拳 AI", tab: "lv5", exercises: ["lv5-1"] },
+  { key: "yolo-lab", label: "⑥ YOLO 實作", tab: "yolo-lab", exercises: ["yolo-lab"] },
+  { key: "quiz1", label: "第一堂測驗", tab: "quiz1", exercises: ["quiz1"] },
+  { key: "quiz2", label: "第二堂測驗", tab: "quiz", exercises: ["quiz2"] },
+];
+
+function progressStorageKey() {
+  return `yoloProgress:${currentUser?.empId || "guest"}`;
+}
+
+function getProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(progressStorageKey()) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveProgress(progress) {
+  localStorage.setItem(progressStorageKey(), JSON.stringify(progress));
+}
+
+function isProgressItemDone(item, progress) {
+  return item.exercises.every(id => progress[id]);
+}
+
+function markExerciseDone(id) {
+  const progress = getProgress();
+  progress[id] = new Date().toISOString();
+  saveProgress(progress);
+  renderProgress();
+}
+
+function renderProgress() {
+  const progress = getProgress();
+  const grid = document.getElementById("progress-grid");
+  if (grid) {
+    grid.innerHTML = PROGRESS_ITEMS.map(item => {
+      const done = isProgressItemDone(item, progress);
+      return `<div class="progress-item ${done ? "done" : ""}">
+        <span>${item.label}</span><strong>${done ? "完成" : "待練習"}</strong>
+      </div>`;
+    }).join("");
+  }
+
+  PROGRESS_ITEMS.forEach(item => {
+    const btn = document.querySelector(`[data-tab="${item.tab}"]`);
+    if (!btn) return;
+    const done = isProgressItemDone(item, progress);
+    btn.classList.toggle("done", done);
+    let chip = btn.querySelector(".progress-mini");
+    if (!chip) {
+      chip = document.createElement("span");
+      chip.className = "progress-mini";
+      btn.appendChild(chip);
+    }
+    chip.textContent = done ? "✓" : "○";
+  });
+}
+
 async function submitRegister() {
   const dept  = document.getElementById("reg-dept").value.trim();
   const name  = document.getElementById("reg-name").value.trim();
@@ -1487,6 +1612,7 @@ async function submitRegister() {
 
   buildQuiz1();
   buildQuiz2();
+  renderProgress();
   activateTab("intro");
   btn.disabled = false;
   btn.textContent = "✅ 確認報到，開始學習！";
@@ -1960,6 +2086,7 @@ async function submitQuiz1() {
   });
 
   await upsertRecord({ empId: currentUser.empId, quiz1Score: score });
+  markExerciseDone("quiz1");
 
   const resultEl = document.getElementById("quiz1-result");
   document.getElementById("score1-display").textContent = score + " 分";
@@ -2100,6 +2227,7 @@ async function submitQuiz2() {
   });
 
   await upsertRecord({ empId: currentUser.empId, quiz2Score: score });
+  markExerciseDone("quiz2");
 
   const resultEl = document.getElementById("quiz2-result");
   document.getElementById("score2-display").textContent = score + " 分";
@@ -2164,10 +2292,39 @@ async function runCode(id) {
       outEl.textContent = output;
       outEl.className = "output-box";
     }
+    if (id !== "sandbox") markExerciseDone(id);
   } catch(err) {
-    outEl.textContent = "❌ " + err.message;
+    outEl.innerHTML = `❌ ${escapeHtml(err.message)}${buildErrorHelp(err.message)}`;
     outEl.className = "output-box error";
   }
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function buildErrorHelp(message) {
+  const msg = String(message);
+  let help = "";
+  if (msg.includes("SyntaxError")) {
+    help = "語法錯誤：通常是少了冒號、括號沒有成對，或把中文標點打進程式。請先看錯誤行附近。";
+  } else if (msg.includes("NameError")) {
+    help = "名稱錯誤：Python 找不到這個變數或函式。請檢查拼字、大小寫，或確認它有先被建立。";
+  } else if (msg.includes("IndentationError")) {
+    help = "縮排錯誤：Python 很在意空格。if、for、def 下面的程式要往右縮排，且同一層要對齊。";
+  } else if (msg.includes("TypeError")) {
+    help = "型別錯誤：可能把文字和數字混在一起計算，或函式收到不適合的資料。";
+  } else if (msg.includes("KeyError")) {
+    help = "字典 key 錯誤：請確認中括號裡的 key 名稱真的存在，例如 label 或 conf。";
+  } else if (msg.includes("IndexError")) {
+    help = "清單位置錯誤：你拿的 index 超出清單長度。清單第一個位置是 0。";
+  }
+  return help ? `<div class="error-help">中文提示：${escapeHtml(help)}</div>` : "";
 }
 
 function resetCode(id) {
@@ -2277,6 +2434,7 @@ async function runRealDetection() {
     detectorPredictions = await detectorModel.detect(detectorImage);
     detectorLastLatency = Math.round(performance.now() - start);
     setDetectorStatus(`推論完成：模型回傳 ${detectorPredictions.length} 個候選框。調整 confidence threshold 可觀察過濾結果。`);
+    markExerciseDone("yolo-lab");
     renderDetections();
   } catch (err) {
     setDetectorStatus(`推論失敗：${err.message}`);
@@ -2355,6 +2513,7 @@ window.addEventListener("DOMContentLoaded", () => {
     DEFAULT_CODE[id] = el.value;
   });
   document.querySelectorAll(".btn-run").forEach(b => b.disabled = true);
+  renderProgress();
   renderDetections();
   initObjectDetector();
 });
