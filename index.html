@@ -734,18 +734,7 @@
     <div class="form-group">
       <label>部門別</label>
       <select id="reg-dept">
-        <option value="">— 請選擇部門 —</option>
-        <option>業務部</option>
-        <option>工程部</option>
-        <option>製造部</option>
-        <option>品保部</option>
-        <option>資訊部</option>
-        <option>研發部</option>
-        <option>採購部</option>
-        <option>人資部</option>
-        <option>財務部</option>
-        <option>行銷部</option>
-        <option>其他</option>
+        <option value="">— 正在載入部門 —</option>
       </select>
     </div>
     <div class="form-group">
@@ -1451,10 +1440,7 @@ for ver, year in yolo_versions.items():
         <div class="form-group">
           <label>部門別</label>
           <select id="edit-dept">
-            <option>業務部</option><option>工程部</option><option>製造部</option>
-            <option>品保部</option><option>資訊部</option><option>研發部</option>
-            <option>採購部</option><option>人資部</option><option>財務部</option>
-            <option>行銷部</option><option>其他</option>
+            <option value="">— 正在載入部門 —</option>
           </select>
         </div>
         <div class="form-group">
@@ -1521,6 +1507,52 @@ async function getAllRecords() {
 // ============================================================
 
 let currentUser = null; // { dept, name, empId }
+let departmentOptions = [];
+
+async function loadDepartments() {
+  try {
+    const res = await fetch("部門別.txt", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    departmentOptions = text
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(Boolean);
+  } catch (err) {
+    console.error("部門別.txt 載入失敗:", err);
+    departmentOptions = ["其他"];
+  }
+  renderDepartmentSelects();
+}
+
+function renderDepartmentSelects() {
+  const optionsHtml = departmentOptions
+    .map(dept => `<option value="${escapeHtml(dept)}">${escapeHtml(dept)}</option>`)
+    .join("");
+
+  const regSelect = document.getElementById("reg-dept");
+  if (regSelect) {
+    const current = regSelect.value;
+    regSelect.innerHTML = `<option value="">— 請選擇部門 —</option>${optionsHtml}`;
+    if (current) regSelect.value = current;
+  }
+
+  const editSelect = document.getElementById("edit-dept");
+  if (editSelect) {
+    const current = editSelect.value;
+    editSelect.innerHTML = optionsHtml || `<option value="其他">其他</option>`;
+    if (current) setDepartmentSelectValue(editSelect, current);
+  }
+}
+
+function setDepartmentSelectValue(select, value) {
+  if (!value) return;
+  const exists = [...select.options].some(opt => opt.value === value);
+  if (!exists) {
+    select.insertAdjacentHTML("afterbegin", `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`);
+  }
+  select.value = value;
+}
 
 const PROGRESS_ITEMS = [
   { key: "lv1", label: "① 變數計算", tab: "lv1", exercises: ["lv1-1", "lv1-2"] },
@@ -1836,7 +1868,7 @@ function openEdit(encodedEmpId) {
   const r = adminData.find(x => x.empId === empId);
   if (!r) return;
   document.getElementById("edit-empid").value = empId;
-  document.getElementById("edit-dept").value  = r.dept || "";
+  setDepartmentSelectValue(document.getElementById("edit-dept"), r.dept || "");
   document.getElementById("edit-name").value  = r.name || "";
   document.getElementById("edit-q1").value    = r.quiz1Score != null ? r.quiz1Score : "";
   document.getElementById("edit-q2").value    = r.quiz2Score != null ? r.quiz2Score : "";
@@ -2508,6 +2540,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 });
 
 window.addEventListener("DOMContentLoaded", () => {
+  loadDepartments();
   document.querySelectorAll("textarea.code-input[id^='code-']").forEach(el => {
     const id = el.id.replace("code-", "");
     DEFAULT_CODE[id] = el.value;
