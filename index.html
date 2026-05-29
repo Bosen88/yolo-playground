@@ -853,6 +853,18 @@
   }
   .lb-hint { text-align: center; font-size: .78rem; color: #bbb; margin-top: 1rem; }
 
+  /* ===== 測驗鎖定 ===== */
+  .quiz-locked {
+    text-align: center; padding: 2.5rem 1.5rem;
+    background: #f0fff4; border: 2px solid #2ecc71;
+    border-radius: 12px; margin: 1rem 0; color: #1a5c35;
+  }
+  .quiz-locked p { margin: .5rem 0; font-size: 1rem; }
+  .quiz-locked-fail {
+    background: #fff8f0; border-color: var(--orange);
+    color: #7a3d00;
+  }
+
   /* ===== PIN 輸入 ===== */
   .pin-row { display: flex; gap: .6rem; justify-content: center; margin: 1rem 0; }
   .pin-digit {
@@ -1920,6 +1932,8 @@ async function enterCourse(dept, name, empId) {
   currentUser = { dept, name, empId };
 
   const remote = await fetchUserProgress(empId);
+  currentUser._remote = remote; // 保存遠端成績供 buildQuiz 判斷鎖定
+
   const remoteProgress = (remote?.progress && typeof remote.progress === "object") ? remote.progress : {};
   const local = getProgress();
   const merged = { ...remoteProgress };
@@ -2237,6 +2251,13 @@ function renderTable() {
                r.quiz2Score >= 70  ? `<span class="badge-pass">及格</span>`   : `<span class="badge-fail">未及格</span>`;
     const ts = r.ts ? new Date(r.ts).toLocaleString("zh-TW") : "—";
     const eid = encodeURIComponent(r.empId);
+
+    // 只有未及格的堂才顯示重考按鈕
+    const retry1 = (r.quiz1Score != null && r.quiz1Score < 70)
+      ? `<button onclick="allowRetry('${eid}',1)" style="background:#27ae60;color:#fff;border:none;border-radius:5px;padding:.28rem .55rem;cursor:pointer;font-size:.75rem;margin-right:.2rem" title="允許第一堂重考">🔄Q1</button>` : "";
+    const retry2 = (r.quiz2Score != null && r.quiz2Score < 70)
+      ? `<button onclick="allowRetry('${eid}',2)" style="background:#27ae60;color:#fff;border:none;border-radius:5px;padding:.28rem .55rem;cursor:pointer;font-size:.75rem;margin-right:.2rem" title="允許第二堂重考">🔄Q2</button>` : "";
+
     return `<tr>
       <td>${r.dept||""}</td>
       <td>${r.name||""}</td>
@@ -2247,6 +2268,7 @@ function renderTable() {
       <td>${b2}</td>
       <td style="font-size:.82rem;color:var(--gray)">${ts}</td>
       <td style="text-align:center;white-space:nowrap">
+        ${retry1}${retry2}
         <button onclick="openEdit('${eid}')"
           style="background:var(--blue);color:#fff;border:none;border-radius:5px;padding:.28rem .65rem;cursor:pointer;font-size:.8rem;margin-right:.3rem">✏️</button>
         <button onclick="resetPin('${eid}')"
@@ -2256,6 +2278,26 @@ function renderTable() {
       </td>
     </tr>`;
   }).join("");
+}
+
+// ===== 允許重考 =====
+async function allowRetry(encodedEmpId, quizNum) {
+  const empId = decodeURIComponent(encodedEmpId);
+  const r = adminData.find(r => r.empId === empId);
+  const label = r ? `${r.name}（${empId}）` : empId;
+  if (!confirm(`允許「${label}」重考第 ${quizNum} 堂測驗？\n這會清除他的第 ${quizNum} 堂成績，下次登入即可重考。`)) return;
+
+  const patch = quizNum === 1 ? { quiz1Score: null } : { quiz2Score: null };
+  const res = await fetch(`/api/training-records?empId=${encodeURIComponent(empId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", "x-admin-token": adminToken || "" },
+    body: JSON.stringify(patch)
+  });
+  if (res.ok) {
+    await loadAdminData();
+  } else {
+    alert("操作失敗，請重新登入管理後台");
+  }
 }
 
 // ===== 重設 PIN =====
@@ -2515,8 +2557,36 @@ function shuffle(arr) {
 }
 
 function buildQuiz1() {
-  quiz1Questions = shuffle(QUIZ1_BANK).slice(0, 10);
   const area = document.getElementById("quiz1-questions-area");
+  const btn  = document.getElementById("submit-quiz1-btn");
+  const resultEl = document.getElementById("quiz1-result");
+
+  // 已及格 → 鎖定
+  const remote = currentUser?._remote;
+  if (remote?.quiz1_score != null && remote.quiz1_score >= 70) {
+    area.innerHTML = `<div class="quiz-locked">
+      <span style="font-size:2rem">🎉</span>
+      <p>你已通過第一堂測驗，得分 <strong>${remote.quiz1_score} 分</strong></p>
+      <p style="color:var(--gray);font-size:.88rem">及格後無法重考，成績已記錄</p>
+    </div>`;
+    btn.style.display = "none";
+    resultEl.style.display = "none";
+    return;
+  }
+
+  // 未及格且已考過 → 等待講師解鎖
+  if (remote?.quiz1_score != null && remote.quiz1_score < 70) {
+    area.innerHTML = `<div class="quiz-locked quiz-locked-fail">
+      <span style="font-size:2rem">📚</span>
+      <p>你的第一堂測驗得分 <strong>${remote.quiz1_score} 分</strong>，尚未及格</p>
+      <p style="color:var(--gray);font-size:.88rem">請等待講師完成補充教學後，由講師開放重考機會</p>
+    </div>`;
+    btn.style.display = "none";
+    resultEl.style.display = "none";
+    return;
+  }
+
+  quiz1Questions = shuffle(QUIZ1_BANK).slice(0, 10);
   area.innerHTML = quiz1Questions.map((item, i) => `
     <div class="quiz-q" id="q1-${i}">
       <p><strong>Q${i+1}.</strong> ${item.q.replace(/\n/g, "<br>")}</p>
@@ -2527,8 +2597,8 @@ function buildQuiz1() {
       </div>
     </div>
   `).join("");
-  document.getElementById("quiz1-result").style.display = "none";
-  document.getElementById("submit-quiz1-btn").style.display = "block";
+  resultEl.style.display = "none";
+  btn.style.display = "block";
 }
 
 async function submitQuiz1() {
@@ -2638,6 +2708,32 @@ const QUIZ2_QUESTIONS = [
 
 function buildQuiz2() {
   const area = document.getElementById("quiz2-questions-area");
+  const btn  = document.getElementById("submit-quiz2-btn");
+  const resultEl = document.getElementById("quiz2-result");
+
+  const remote = currentUser?._remote;
+  if (remote?.quiz2_score != null && remote.quiz2_score >= 70) {
+    area.innerHTML = `<div class="quiz-locked">
+      <span style="font-size:2rem">🎉</span>
+      <p>你已通過第二堂測驗，得分 <strong>${remote.quiz2_score} 分</strong></p>
+      <p style="color:var(--gray);font-size:.88rem">及格後無法重考，成績已記錄</p>
+    </div>`;
+    btn.style.display = "none";
+    resultEl.style.display = "none";
+    return;
+  }
+
+  if (remote?.quiz2_score != null && remote.quiz2_score < 70) {
+    area.innerHTML = `<div class="quiz-locked quiz-locked-fail">
+      <span style="font-size:2rem">📚</span>
+      <p>你的第二堂測驗得分 <strong>${remote.quiz2_score} 分</strong>，尚未及格</p>
+      <p style="color:var(--gray);font-size:.88rem">請等待講師完成補充教學後，由講師開放重考機會</p>
+    </div>`;
+    btn.style.display = "none";
+    resultEl.style.display = "none";
+    return;
+  }
+
   area.innerHTML = QUIZ2_QUESTIONS.map((item, i) => {
     if (item.type === "radio") {
       return `<div class="quiz-q" id="q2-${i}">
