@@ -705,6 +705,42 @@
   .badge-fail { background: #FFE0E0; color: #c0392b; font-weight: 700; padding: .15rem .6rem; border-radius: 12px; font-size: .8rem; }
   .badge-none { background: #F0F0F0; color: #888; padding: .15rem .6rem; border-radius: 12px; font-size: .8rem; }
 
+  /* ===== 管理說明 ===== */
+  .admin-guide {
+    background: white; border-radius: 10px;
+    border: 1px solid #e0e0e0; margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .admin-guide-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .9rem 1.2rem; cursor: pointer;
+    background: #fff8ee; border-bottom: 1px solid #ffe0a0;
+    font-weight: 700; color: var(--orange-dark);
+    user-select: none;
+  }
+  .admin-guide-header:hover { background: #fff3e0; }
+  #guide-toggle-icon { font-size: .82rem; color: var(--gray); }
+  .admin-guide-body { padding: 1.2rem 1.4rem; }
+  .admin-guide-body.hidden { display: none; }
+
+  .guide-section { margin-bottom: 1.2rem; }
+  .guide-section:last-child { margin-bottom: 0; }
+  .guide-section h3 {
+    font-size: .95rem; color: var(--orange-dark);
+    margin-bottom: .5rem; padding-bottom: .3rem;
+    border-bottom: 1px dashed #ffd080;
+  }
+  .guide-section ul, .guide-section ol {
+    padding-left: 1.3rem; font-size: .88rem;
+    line-height: 1.9; color: #444;
+  }
+  .guide-section code {
+    background: #f5f5f5; border-radius: 3px;
+    padding: .1rem .4rem; font-size: .82rem; color: #c0392b;
+  }
+  .guide-warning { background: #fff8f0; border-radius: 8px; padding: .8rem 1rem; }
+  .guide-warning h3 { color: #c0392b; border-bottom-color: #ffcdd2; }
+
   .dept-chart { margin-bottom: 1.5rem; }
   .dept-chart h3 { font-size: 1rem; font-weight: 700; color: var(--orange-dark); margin-bottom: .8rem; }
   .dept-bar-row { display: flex; align-items: center; gap: .7rem; margin-bottom: .5rem; }
@@ -1616,6 +1652,111 @@ for ver, year in yolo_versions.items():
     </div>
   </header>
   <main style="max-width:1100px">
+
+    <!-- ===== 操作說明 ===== -->
+    <div class="admin-guide">
+      <div class="admin-guide-header" onclick="toggleGuide()">
+        <span>📖 管理後台操作說明</span>
+        <span id="guide-toggle-icon">▼ 展開</span>
+      </div>
+      <div class="admin-guide-body hidden" id="admin-guide-body">
+
+        <div class="guide-section">
+          <h3>🔐 登入與權限</h3>
+          <ul>
+            <li>點擊課程右上角「<strong>⚙ 管理</strong>」按鈕，輸入管理者帳號密碼進入後台。</li>
+            <li>管理者帳號密碼由系統管理員設定於 Vercel 環境變數（<code>ADMIN_USER</code> / <code>ADMIN_PASS</code>）。</li>
+            <li>登入 Session 只在當次瀏覽器分頁有效，關閉後需重新登入。</li>
+          </ul>
+        </div>
+
+        <div class="guide-section">
+          <h3>📊 成績儀表板</h3>
+          <ul>
+            <li>顯示目前所有報到學員的統計數據，包含報名人數、各堂完成人數、及格人數、平均分數。</li>
+            <li>點擊「<strong>↻ 重新整理</strong>」可手動更新最新資料。</li>
+            <li>點擊「<strong>⬇ 匯出 CSV</strong>」可將目前篩選結果匯出為 CSV 檔，可用 Excel 開啟。</li>
+          </ul>
+        </div>
+
+        <div class="guide-section">
+          <h3>🔍 篩選與搜尋</h3>
+          <ul>
+            <li>可依<strong>部門</strong>、<strong>姓名／工號</strong>、<strong>測驗狀態</strong>三個條件同時篩選。</li>
+            <li>測驗狀態選項：全部 / 兩堂皆及格 / 有未及格 / 未完成測驗。</li>
+            <li>點擊表格欄位標題（部門 ↕ / 姓名 ↕ 等）可排序，再次點擊切換升降序。</li>
+          </ul>
+        </div>
+
+        <div class="guide-section">
+          <h3>🔄 允許重考（方案B）</h3>
+          <ul>
+            <li>學員測驗<strong>未及格</strong>後，該行會出現綠色 <strong>🔄Q1</strong> 或 <strong>🔄Q2</strong> 按鈕。</li>
+            <li>講師完成補充教學後，點擊按鈕確認 → 該堂成績清除 → 學員重新登入即可重考。</li>
+            <li><strong>及格的學員不會出現重考按鈕</strong>，及格後永久鎖定，不能再考。</li>
+            <li>建議流程：考試 → 補充教學 → 點重考按鈕 → 學員重考。</li>
+          </ul>
+        </div>
+
+        <div class="guide-section">
+          <h3>✏️ 編輯學員資料</h3>
+          <ul>
+            <li>點擊藍色 <strong>✏️</strong> 按鈕可修改學員的部門、姓名、各堂分數。</li>
+            <li>分數欄位留空代表<strong>清除</strong>該堂成績（等同於允許重考）。</li>
+            <li>適用於需要手動修正資料的特殊情況。</li>
+          </ul>
+        </div>
+
+        <div class="guide-section">
+          <h3>🔑 重設 PIN 碼</h3>
+          <ul>
+            <li>點擊紫色 <strong>🔑</strong> 按鈕可清除該學員的 PIN 碼。</li>
+            <li>學員下次登入時可重新設定新的 PIN 碼。</li>
+            <li>適用於學員忘記 PIN 碼，或 PIN 碼遭他人知悉需要更換的情況。</li>
+          </ul>
+        </div>
+
+        <div class="guide-section">
+          <h3>🗑 刪除學員記錄</h3>
+          <ul>
+            <li>點擊紅色 <strong>🗑</strong> 按鈕可刪除該學員的<strong>所有資料</strong>（含成績、進度、PIN）。</li>
+            <li><strong>此動作無法復原</strong>，請謹慎操作。</li>
+            <li>適用於測試帳號清理，或學員重新報到需要完全重置的情況。</li>
+          </ul>
+        </div>
+
+        <div class="guide-section">
+          <h3>🏆 排行榜</h3>
+          <ul>
+            <li>學員在課程頁面可看到公開排行榜，顯示所有人的成績與稱號。</li>
+            <li>排行榜只顯示姓名、部門、分數，不顯示工號等個人識別資訊。</li>
+            <li>稱號依總分自動判定：🤖 AI 之神（200）/ 🔥 YOLO 達人（180）/ ⚡ 神經網路俠（160）/ 🧠 深度學習者（140）/ 🐍 Python 新星（120）/ 🌱 AI 幼苗（100）/ 🐣 剛出殼的蛋。</li>
+          </ul>
+        </div>
+
+        <div class="guide-section">
+          <h3>📱 學員報到流程</h3>
+          <ol>
+            <li>開啟網頁後顯示「學員報到」畫面，填寫部門、姓名、工號。</li>
+            <li><strong>首次報到</strong>：系統要求設定 4 位數 PIN 碼（用於保護帳號）。</li>
+            <li><strong>再次登入</strong>：輸入相同工號後，需輸入 PIN 碼驗證身份。</li>
+            <li>報到後自動載入上次的學習進度，跨裝置同步。</li>
+          </ol>
+        </div>
+
+        <div class="guide-section guide-warning">
+          <h3>⚠️ 注意事項</h3>
+          <ul>
+            <li>管理後台帳號密碼請妥善保管，勿讓學員知悉。</li>
+            <li>匯出的 CSV 包含個人資料，請依公司資訊安全規定處理。</li>
+            <li>排行榜為公開頁面，學員無需登入即可查看（但不顯示工號）。</li>
+            <li>若需修改部門清單，請更新 <code>departments.txt</code> 並重新部署。</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
     <div class="admin-header">
       <h2>📊 成績儀表板</h2>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap">
@@ -2278,6 +2419,14 @@ function renderTable() {
       </td>
     </tr>`;
   }).join("");
+}
+
+// ===== 說明區塊收合 =====
+function toggleGuide() {
+  const body = document.getElementById("admin-guide-body");
+  const icon = document.getElementById("guide-toggle-icon");
+  const isHidden = body.classList.toggle("hidden");
+  icon.textContent = isHidden ? "▼ 展開" : "▲ 收合";
 }
 
 // ===== 允許重考 =====
