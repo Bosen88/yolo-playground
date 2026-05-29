@@ -1480,6 +1480,7 @@ async function upsertRecord(patch) {
     name: patch.name,
     quiz1Score: patch.quiz1Score != null ? patch.quiz1Score : undefined,
     quiz2Score: patch.quiz2Score != null ? patch.quiz2Score : undefined,
+    progress: patch.progress !== undefined ? patch.progress : undefined,
   };
   Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
 
@@ -1491,6 +1492,16 @@ async function upsertRecord(patch) {
   if (!res.ok) {
     const err = await res.text();
     console.error("Record upsert error:", err);
+  }
+}
+
+async function fetchUserProgress(empId) {
+  try {
+    const res = await fetch(`/api/training-records?empId=${encodeURIComponent(empId)}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
   }
 }
 
@@ -1511,7 +1522,7 @@ let departmentOptions = [];
 
 async function loadDepartments() {
   try {
-    const res = await fetch("departments.txt", { cache: "no-store" });
+    const res = await fetch("departments.txt", { cache: "force-cache" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     departmentOptions = text
@@ -1587,9 +1598,13 @@ function isProgressItemDone(item, progress) {
 
 function markExerciseDone(id) {
   const progress = getProgress();
+  if (progress[id]) return;
   progress[id] = new Date().toISOString();
   saveProgress(progress);
   renderProgress();
+  if (currentUser?.empId) {
+    upsertRecord({ empId: currentUser.empId, progress });
+  }
 }
 
 function renderProgress() {
@@ -1637,6 +1652,17 @@ async function submitRegister() {
 
   currentUser = { dept, name, empId };
   await upsertRecord({ dept, name, empId });
+
+  // 從後端拉回進度，合併到本機（取兩邊較新的）
+  const remote = await fetchUserProgress(empId);
+  if (remote?.progress && typeof remote.progress === "object") {
+    const local = getProgress();
+    const merged = { ...remote.progress };
+    Object.entries(local).forEach(([k, v]) => {
+      if (!merged[k] || v > merged[k]) merged[k] = v;
+    });
+    saveProgress(merged);
+  }
 
   document.getElementById("overlay-register").classList.add("hidden");
   document.getElementById("user-badge").style.display = "flex";

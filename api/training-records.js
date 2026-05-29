@@ -26,6 +26,7 @@ function mapRecord(body = {}) {
   };
   if (body.quiz1Score !== undefined) payload.quiz1_score = body.quiz1Score;
   if (body.quiz2Score !== undefined) payload.quiz2_score = body.quiz2Score;
+  if (body.progress !== undefined) payload.progress = body.progress;
   return Object.fromEntries(Object.entries(payload).filter(([, v]) => v !== undefined));
 }
 
@@ -88,6 +89,15 @@ module.exports = async function handler(req, res) {
     });
     if (!result.ok) return res.status(result.status).json({ ok: false, message: await result.text() });
     return res.status(200).json({ ok: true });
+  }
+
+  // 學員查自己的進度（不需要 admin token，但必須帶 empId）
+  if (req.method === "GET" && req.query.empId && !verifyAdminToken(req)) {
+    const empId = encodeURIComponent(req.query.empId);
+    const result = await supabaseFetch(`${SUPABASE_TABLE}?emp_id=eq.${empId}&select=progress,quiz1_score,quiz2_score`);
+    if (!result.ok) return res.status(result.status).json({ ok: false });
+    const data = await result.json();
+    return res.status(200).json(data[0] || null);
   }
 
   if (!verifyAdminToken(req)) {
