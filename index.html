@@ -715,12 +715,37 @@
 
   /* ===== RESPONSIVE ===== */
   @media (max-width: 600px) {
-    header h1 { font-size: .95rem; }
+    /* Header */
+    header {
+      height: auto;
+      padding: .5rem .75rem;
+      flex-wrap: wrap;
+      gap: .3rem;
+    }
+    header h1 {
+      font-size: .88rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+    #header-right { gap: .4rem; }
     #user-badge { display: none; }
-    .tab-btn { padding: .55rem .8rem; font-size: .8rem; }
+    #lesson-badge { font-size: .72rem; padding: .2rem .55rem; }
+    #btn-admin-link { font-size: .72rem; padding: .2rem .5rem; }
+
+    /* Nav tabs：兩排都可橫滑，字更小 */
+    .tab-btn { padding: .45rem .65rem; font-size: .75rem; }
+    .tab-btn.quiz-btn { font-size: .75rem; padding: .45rem .75rem; }
+
+    /* Main content */
+    main { padding: .8rem .75rem 3rem; }
     textarea.code-input { font-size: .85rem; }
-    .modal-box { padding: 1.5rem 1.2rem; }
+    .modal-box { padding: 1.2rem 1rem; }
     .lab-grid { grid-template-columns: 1fr; }
+
+    /* Progress grid */
+    .progress-grid { grid-template-columns: 1fr 1fr !important; }
   }
 
   /* ===== 排行榜 ===== */
