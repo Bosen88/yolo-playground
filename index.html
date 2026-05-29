@@ -1651,18 +1651,21 @@ async function submitRegister() {
   btn.textContent = "報到中...";
 
   currentUser = { dept, name, empId };
-  await upsertRecord({ dept, name, empId });
 
-  // 從後端拉回進度，合併到本機（取兩邊較新的）
+  // 先拉遠端進度再 upsert，避免覆蓋掉已存的進度
   const remote = await fetchUserProgress(empId);
-  if (remote?.progress && typeof remote.progress === "object") {
-    const local = getProgress();
-    const merged = { ...remote.progress };
-    Object.entries(local).forEach(([k, v]) => {
-      if (!merged[k] || v > merged[k]) merged[k] = v;
-    });
-    saveProgress(merged);
-  }
+  const remoteProgress = (remote?.progress && typeof remote.progress === "object") ? remote.progress : {};
+  const local = getProgress();
+
+  // 合併：兩邊都有的取時間戳較新的
+  const merged = { ...remoteProgress };
+  Object.entries(local).forEach(([k, v]) => {
+    if (!merged[k] || v > merged[k]) merged[k] = v;
+  });
+  saveProgress(merged);
+
+  // upsert 時帶入合併後的進度，確保後端也是最新狀態
+  await upsertRecord({ dept, name, empId, progress: merged });
 
   document.getElementById("overlay-register").classList.add("hidden");
   document.getElementById("user-badge").style.display = "flex";
