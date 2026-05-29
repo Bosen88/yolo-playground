@@ -828,6 +828,17 @@
   }
   .lb-hint { text-align: center; font-size: .78rem; color: #bbb; margin-top: 1rem; }
 
+  /* ===== PIN 輸入 ===== */
+  .pin-row { display: flex; gap: .6rem; justify-content: center; margin: 1rem 0; }
+  .pin-digit {
+    width: 52px; height: 60px; font-size: 1.8rem; text-align: center;
+    border: 2px solid #ddd; border-radius: 10px; outline: none;
+    font-family: monospace; transition: border-color .2s;
+    -webkit-text-security: disc;
+  }
+  .pin-digit:focus { border-color: var(--orange); box-shadow: 0 0 0 3px #ff8c1a33; }
+  .pin-hint { font-size: .82rem; color: var(--gray); text-align: center; margin-bottom: .5rem; }
+
   @media (max-width: 600px) {
     .lb-podium { gap: .5rem; }
     .podium-card { padding: .8rem .4rem .7rem; }
@@ -859,6 +870,40 @@
     </div>
     <p class="modal-error" id="reg-error">請填寫所有欄位</p>
     <button class="btn-primary" onclick="submitRegister()">✅ 確認報到，開始學習！</button>
+  </div>
+</div>
+
+<!-- ===== PIN 設定 OVERLAY ===== -->
+<div class="overlay hidden" id="overlay-pin-set">
+  <div class="modal-box">
+    <h2>🔒 設定專屬 PIN 碼</h2>
+    <p class="sub">工號 <strong id="pin-set-empid"></strong> 第一次登入，請設定 4 位數 PIN 碼保護你的帳號</p>
+    <p class="pin-hint">之後每次用此工號登入都需要輸入 PIN</p>
+    <div class="pin-row" id="pin-set-row">
+      <input class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+      <input class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+      <input class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+      <input class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+    </div>
+    <p class="modal-error" id="pin-set-error">請輸入 4 位數字</p>
+    <button class="btn-primary" id="pin-set-btn" onclick="submitSetPin()">✅ 確認設定</button>
+  </div>
+</div>
+
+<!-- ===== PIN 驗證 OVERLAY ===== -->
+<div class="overlay hidden" id="overlay-pin-verify">
+  <div class="modal-box">
+    <h2>🔑 請輸入 PIN 碼</h2>
+    <p class="sub">工號 <strong id="pin-verify-empid"></strong>，請輸入你設定的 4 位數 PIN</p>
+    <div class="pin-row" id="pin-verify-row">
+      <input class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+      <input class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+      <input class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+      <input class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+    </div>
+    <p class="modal-error" id="pin-verify-error">PIN 碼錯誤，請重試</p>
+    <button class="btn-primary" id="pin-verify-btn" onclick="submitVerifyPin()">🔓 確認登入</button>
+    <button style="width:100%;margin-top:.5rem;background:transparent;border:1.5px solid #ddd;border-radius:8px;padding:.7rem;cursor:pointer;font-family:inherit;color:var(--gray)" onclick="backToRegister()">← 返回修改資料</button>
   </div>
 </div>
 
@@ -1811,26 +1856,57 @@ async function submitRegister() {
 
   const btn = document.querySelector("#overlay-register .btn-primary");
   btn.disabled = true;
-  btn.textContent = "報到中...";
+  btn.textContent = "驗證中...";
 
+  // 查詢此工號是否已有 PIN
+  try {
+    const pinRes = await fetch(`/api/pin?empId=${encodeURIComponent(empId)}`);
+    if (pinRes.status === 404) {
+      // 全新工號 → 先建立記錄，再要求設定 PIN
+      currentUser = { dept, name, empId };
+      await upsertRecord({ dept, name, empId, progress: getProgress() });
+      showPinSet(dept, name, empId);
+    } else if (pinRes.ok) {
+      const { hasPin } = await pinRes.json();
+      if (hasPin) {
+        // 已有 PIN → 要求驗證
+        currentUser = { dept, name, empId };
+        showPinVerify(dept, name, empId);
+      } else {
+        // 有記錄但未設 PIN（舊帳號） → 要求設定
+        currentUser = { dept, name, empId };
+        await upsertRecord({ dept, name, empId });
+        showPinSet(dept, name, empId);
+      }
+    } else {
+      throw new Error("API error");
+    }
+  } catch {
+    err.style.display = "block";
+    err.textContent = "網路錯誤，請重試";
+  }
+
+  btn.disabled = false;
+  btn.textContent = "✅ 確認報到，開始學習！";
+}
+
+// 進入課程（PIN 驗證通過後呼叫）
+async function enterCourse(dept, name, empId) {
   currentUser = { dept, name, empId };
 
-  // 先拉遠端進度再 upsert，避免覆蓋掉已存的進度
   const remote = await fetchUserProgress(empId);
   const remoteProgress = (remote?.progress && typeof remote.progress === "object") ? remote.progress : {};
   const local = getProgress();
-
-  // 合併：兩邊都有的取時間戳較新的
   const merged = { ...remoteProgress };
   Object.entries(local).forEach(([k, v]) => {
     if (!merged[k] || v > merged[k]) merged[k] = v;
   });
   saveProgress(merged);
-
-  // upsert 時帶入合併後的進度，確保後端也是最新狀態
   await upsertRecord({ dept, name, empId, progress: merged });
 
   document.getElementById("overlay-register").classList.add("hidden");
+  document.getElementById("overlay-pin-set").classList.add("hidden");
+  document.getElementById("overlay-pin-verify").classList.add("hidden");
   document.getElementById("user-badge").style.display = "flex";
   document.getElementById("user-badge").textContent = `${dept} | ${name}（${empId}）`;
 
@@ -1838,8 +1914,124 @@ async function submitRegister() {
   buildQuiz2();
   renderProgress();
   activateTab("intro");
+}
+
+// ============================================================
+// PIN 輔助函數
+// ============================================================
+
+function getPinValue(rowId) {
+  return [...document.querySelectorAll(`#${rowId} .pin-digit`)].map(i => i.value).join("");
+}
+
+function clearPinRow(rowId) {
+  document.querySelectorAll(`#${rowId} .pin-digit`).forEach(i => i.value = "");
+  document.querySelector(`#${rowId} .pin-digit`).focus();
+}
+
+function initPinRow(rowId, onComplete) {
+  const digits = [...document.querySelectorAll(`#${rowId} .pin-digit`)];
+  digits.forEach((el, idx) => {
+    el.value = "";
+    el.oninput = () => {
+      el.value = el.value.replace(/\D/, "").slice(-1);
+      if (el.value && idx < digits.length - 1) digits[idx + 1].focus();
+      if (digits.every(d => d.value) && onComplete) onComplete();
+    };
+    el.onkeydown = (e) => {
+      if (e.key === "Backspace" && !el.value && idx > 0) digits[idx - 1].focus();
+    };
+  });
+  digits[0].focus();
+}
+
+function showPinSet(dept, name, empId) {
+  document.getElementById("overlay-register").classList.add("hidden");
+  document.getElementById("pin-set-empid").textContent = empId;
+  document.getElementById("pin-set-error").style.display = "none";
+  document.getElementById("overlay-pin-set").classList.remove("hidden");
+  initPinRow("pin-set-row", null);
+  document.getElementById("overlay-pin-set")._ctx = { dept, name, empId };
+}
+
+function showPinVerify(dept, name, empId) {
+  document.getElementById("overlay-register").classList.add("hidden");
+  document.getElementById("pin-verify-empid").textContent = empId;
+  document.getElementById("pin-verify-error").style.display = "none";
+  document.getElementById("overlay-pin-verify").classList.remove("hidden");
+  initPinRow("pin-verify-row", submitVerifyPin);
+  document.getElementById("overlay-pin-verify")._ctx = { dept, name, empId };
+}
+
+function backToRegister() {
+  document.getElementById("overlay-pin-verify").classList.add("hidden");
+  document.getElementById("overlay-register").classList.remove("hidden");
+  currentUser = null;
+}
+
+async function submitSetPin() {
+  const ctx = document.getElementById("overlay-pin-set")._ctx;
+  const pin = getPinValue("pin-set-row");
+  const errEl = document.getElementById("pin-set-error");
+  const btn = document.getElementById("pin-set-btn");
+
+  if (!/^\d{4}$/.test(pin)) {
+    errEl.style.display = "block";
+    errEl.textContent = "請輸入完整的 4 位數字";
+    clearPinRow("pin-set-row");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "設定中...";
+  errEl.style.display = "none";
+
+  const res = await fetch("/api/pin?action=set", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ empId: ctx.empId, pin })
+  });
+  const data = await res.json();
+
+  if (data.ok) {
+    await enterCourse(ctx.dept, ctx.name, ctx.empId);
+  } else {
+    errEl.style.display = "block";
+    errEl.textContent = data.message || "設定失敗，請重試";
+    clearPinRow("pin-set-row");
+  }
   btn.disabled = false;
-  btn.textContent = "✅ 確認報到，開始學習！";
+  btn.textContent = "✅ 確認設定";
+}
+
+async function submitVerifyPin() {
+  const ctx = document.getElementById("overlay-pin-verify")._ctx;
+  const pin = getPinValue("pin-verify-row");
+  const errEl = document.getElementById("pin-verify-error");
+  const btn = document.getElementById("pin-verify-btn");
+
+  if (!/^\d{4}$/.test(pin)) return;
+
+  btn.disabled = true;
+  btn.textContent = "驗證中...";
+  errEl.style.display = "none";
+
+  const res = await fetch("/api/pin?action=verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ empId: ctx.empId, pin })
+  });
+  const data = await res.json();
+
+  if (data.ok) {
+    await enterCourse(ctx.dept, ctx.name, ctx.empId);
+  } else {
+    errEl.style.display = "block";
+    errEl.textContent = "PIN 碼錯誤，請重試";
+    clearPinRow("pin-verify-row");
+  }
+  btn.disabled = false;
+  btn.textContent = "🔓 確認登入";
 }
 
 // ============================================================
@@ -2032,11 +2224,31 @@ function renderTable() {
       <td style="text-align:center;white-space:nowrap">
         <button onclick="openEdit('${eid}')"
           style="background:var(--blue);color:#fff;border:none;border-radius:5px;padding:.28rem .65rem;cursor:pointer;font-size:.8rem;margin-right:.3rem">✏️</button>
+        <button onclick="resetPin('${eid}')"
+          style="background:#8e44ad;color:#fff;border:none;border-radius:5px;padding:.28rem .65rem;cursor:pointer;font-size:.8rem;margin-right:.3rem" title="重設 PIN 碼">🔑</button>
         <button onclick="deleteRecord('${eid}')"
           style="background:var(--red);color:#fff;border:none;border-radius:5px;padding:.28rem .65rem;cursor:pointer;font-size:.8rem">🗑</button>
       </td>
     </tr>`;
   }).join("");
+}
+
+// ===== 重設 PIN =====
+async function resetPin(encodedEmpId) {
+  const empId = decodeURIComponent(encodedEmpId);
+  const r = adminData.find(r => r.empId === empId);
+  const label = r ? `${r.name}（${empId}）` : empId;
+  if (!confirm(`確定要重設「${label}」的 PIN 碼？\n重設後他下次登入可以重新設定新 PIN。`)) return;
+  const res = await fetch("/api/pin?action=reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-admin-token": adminToken || "" },
+    body: JSON.stringify({ empId })
+  });
+  if (res.ok) {
+    alert(`✅ 已重設「${label}」的 PIN 碼`);
+  } else {
+    alert("重設失敗，請重新登入管理後台");
+  }
 }
 
 // ===== 刪除記錄 =====
