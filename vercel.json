@@ -2,12 +2,12 @@
   "version": 2,
   "builds": [
     { "src": "api/*.js", "use": "@vercel/node" },
-    { "src": "部門別.txt", "use": "@vercel/static" },
+    { "src": "departments.txt", "use": "@vercel/static" },
     { "src": "index.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1.js" },
-    { "src": "/部門別.txt", "dest": "/部門別.txt" },
+    { "src": "/departments.txt", "dest": "/departments.txt" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

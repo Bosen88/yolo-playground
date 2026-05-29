@@ -1511,7 +1511,7 @@ let departmentOptions = [];
 
 async function loadDepartments() {
   try {
-    const res = await fetch("部門別.txt", { cache: "no-store" });
+    const res = await fetch("departments.txt", { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     departmentOptions = text
