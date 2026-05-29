@@ -722,6 +722,118 @@
     .modal-box { padding: 1.5rem 1.2rem; }
     .lab-grid { grid-template-columns: 1fr; }
   }
+
+  /* ===== 排行榜 ===== */
+  .lb-btn { background: linear-gradient(90deg,#f7c800,#ff8c00) !important; color: #2B2B2B !important; font-weight: bold; }
+  .lb-btn.active { box-shadow: 0 0 0 3px #f7c80088; }
+
+  .lb-wrap { max-width: 820px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+  .lb-header {
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    border-radius: 16px; padding: 1.6rem 2rem; margin-bottom: 1.8rem;
+    color: white; position: relative; overflow: hidden;
+  }
+  .lb-header::before {
+    content: "🌟✨⭐🌟✨";
+    position: absolute; top: -8px; right: 16px;
+    font-size: 1.6rem; opacity: .25; letter-spacing: 4px;
+  }
+  .lb-title-row { display: flex; align-items: center; gap: 1rem; }
+  .lb-trophy { font-size: 3rem; line-height: 1; filter: drop-shadow(0 0 8px gold); }
+  .lb-title { font-size: 1.5rem; margin-bottom: .2rem; }
+  .lb-subtitle { font-size: .85rem; opacity: .7; }
+  .lb-refresh-btn {
+    margin-left: auto; background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.3); color: white;
+    border-radius: 8px; padding: .5rem 1rem; cursor: pointer;
+    font-size: .85rem; transition: background .2s; white-space: nowrap;
+  }
+  .lb-refresh-btn:hover { background: rgba(255,255,255,.25); }
+
+  .lb-loading, .lb-empty {
+    text-align: center; padding: 3rem 1rem; color: var(--gray);
+  }
+  .lb-spinner {
+    width: 40px; height: 40px; border: 4px solid #eee;
+    border-top-color: var(--orange); border-radius: 50%;
+    animation: spin .8s linear infinite; margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 獎台 */
+  .lb-podium {
+    display: flex; align-items: flex-end; justify-content: center;
+    gap: 1rem; margin-bottom: 2rem; padding: 0 .5rem;
+  }
+  .podium-card {
+    flex: 1; max-width: 200px; text-align: center;
+    border-radius: 16px 16px 0 0; padding: 1.2rem .8rem 1rem;
+    position: relative; cursor: default;
+    transition: transform .2s;
+  }
+  .podium-card:hover { transform: translateY(-4px); }
+  .podium-card.rank-1 {
+    background: linear-gradient(160deg,#fff9c4,#ffe066);
+    border: 2px solid #f7c800; min-height: 190px;
+    box-shadow: 0 8px 24px #f7c80044;
+  }
+  .podium-card.rank-2 {
+    background: linear-gradient(160deg,#f0f0f0,#d0d0d0);
+    border: 2px solid #aaa; min-height: 155px;
+    box-shadow: 0 6px 18px #0002;
+  }
+  .podium-card.rank-3 {
+    background: linear-gradient(160deg,#ffe8d0,#f4a460);
+    border: 2px solid #cd7f32; min-height: 130px;
+    box-shadow: 0 6px 18px #cd7f3233;
+  }
+  .podium-medal { font-size: 2.2rem; display: block; margin-bottom: .3rem; }
+  .podium-name { font-weight: bold; font-size: 1rem; word-break: break-all; }
+  .podium-dept { font-size: .75rem; opacity: .65; margin: .2rem 0; }
+  .podium-score {
+    font-size: 1.5rem; font-weight: bold; margin-top: .4rem;
+    color: #333;
+  }
+  .podium-score small { font-size: .7rem; font-weight: normal; opacity: .6; }
+  .podium-title { font-size: .75rem; margin-top: .3rem; }
+
+  /* 表格 */
+  .lb-table-wrap { overflow-x: auto; border-radius: 12px; box-shadow: 0 2px 12px #0001; }
+  .lb-table { width: 100%; border-collapse: collapse; background: white; font-size: .9rem; }
+  .lb-table thead tr { background: var(--dark); color: white; }
+  .lb-table th { padding: .75rem 1rem; text-align: center; font-weight: 600; white-space: nowrap; }
+  .lb-table td { padding: .7rem 1rem; text-align: center; border-bottom: 1px solid #f0f0f0; }
+  .lb-table tbody tr:last-child td { border-bottom: none; }
+  .lb-table tbody tr:hover td { background: #fffbf0; }
+  .lb-table tbody tr.my-row td { background: #fff8e1; font-weight: bold; }
+  .lb-table tbody tr.my-row td:first-child { border-left: 4px solid var(--orange); }
+
+  .lb-rank-num { font-weight: bold; font-size: 1rem; }
+  .lb-rank-num.top1 { color: #f7c800; }
+  .lb-rank-num.top2 { color: #aaa; }
+  .lb-rank-num.top3 { color: #cd7f32; }
+
+  .lb-score-cell { font-weight: bold; }
+  .lb-score-cell.perfect { color: #27ae60; }
+  .lb-score-cell.great   { color: #2980b9; }
+  .lb-score-cell.ok      { color: #e67e22; }
+  .lb-score-cell.low     { color: #c0392b; }
+  .lb-score-cell.na      { color: #ccc; }
+
+  .lb-badge {
+    display: inline-block; font-size: .75rem;
+    border-radius: 20px; padding: 2px 10px;
+    background: #f0f0f0; color: #555; white-space: nowrap;
+  }
+  .lb-hint { text-align: center; font-size: .78rem; color: #bbb; margin-top: 1rem; }
+
+  @media (max-width: 600px) {
+    .lb-podium { gap: .5rem; }
+    .podium-card { padding: .8rem .4rem .7rem; }
+    .podium-name { font-size: .85rem; }
+    .lb-table th, .lb-table td { padding: .6rem .6rem; font-size: .8rem; }
+  }
 </style>
 </head>
 <body>
@@ -794,6 +906,7 @@
   <div id="tab-bar-row2">
     <button class="tab-btn quiz-btn" data-tab="quiz1">📖 第一堂測驗 — AI 入門理論</button>
     <button class="tab-btn quiz-btn" data-tab="quiz">📝 第二堂測驗 — Python 實作</button>
+    <button class="tab-btn quiz-btn lb-btn" data-tab="leaderboard">🏆 排行榜</button>
   </div>
 </nav>
 
@@ -1357,6 +1470,56 @@ for ver, year in yolo_versions.items():
       <h2 id="result2-title"></h2>
       <p id="result2-msg"></p>
       <ul class="wrong-list" id="wrong2-list"></ul>
+    </div>
+  </div>
+
+  <!-- ===== 排行榜 ===== -->
+  <div class="panel" id="tab-leaderboard">
+    <div class="lb-wrap">
+      <div class="lb-header">
+        <div class="lb-title-row">
+          <span class="lb-trophy">🏆</span>
+          <div>
+            <h2 class="lb-title">班級排行榜</h2>
+            <p class="lb-subtitle">看看你在哪裡？點擊重新整理抓最新成績</p>
+          </div>
+          <button class="lb-refresh-btn" onclick="loadLeaderboard()">🔄 重新整理</button>
+        </div>
+      </div>
+
+      <div id="lb-loading" class="lb-loading">
+        <div class="lb-spinner"></div>
+        <p>載入中...</p>
+      </div>
+
+      <div id="lb-empty" class="lb-empty hidden">
+        <p>還沒有人考完試，你要第一個嗎？</p>
+      </div>
+
+      <div id="lb-content" class="hidden">
+        <!-- 前三名獎台 -->
+        <div class="lb-podium" id="lb-podium"></div>
+
+        <!-- 完整排名表 -->
+        <div class="lb-table-wrap">
+          <table class="lb-table">
+            <thead>
+              <tr>
+                <th>名次</th>
+                <th>姓名</th>
+                <th>部門</th>
+                <th>第一堂</th>
+                <th>第二堂</th>
+                <th>總分</th>
+                <th>稱號</th>
+              </tr>
+            </thead>
+            <tbody id="lb-tbody"></tbody>
+          </table>
+        </div>
+
+        <p class="lb-hint">* 總分 = 第一堂 + 第二堂，未完成的測驗以 — 顯示</p>
+      </div>
     </div>
   </div>
 
@@ -2552,7 +2715,8 @@ function renderDetections() {
 const TAB_MAP = {
   intro: "tab-intro", lv1: "tab-lv1", lv2: "tab-lv2",
   lv3: "tab-lv3", lv4: "tab-lv4", lv5: "tab-lv5",
-  "yolo-lab": "tab-yolo-lab", sandbox: "tab-sandbox", quiz1: "tab-quiz1", quiz: "tab-quiz",
+  "yolo-lab": "tab-yolo-lab", sandbox: "tab-sandbox",
+  quiz1: "tab-quiz1", quiz: "tab-quiz", leaderboard: "tab-leaderboard",
 };
 
 function activateTab(name) {
@@ -2562,6 +2726,117 @@ function activateTab(name) {
   if (btn) btn.classList.add("active");
   const panelId = TAB_MAP[name];
   if (panelId) document.getElementById(panelId).classList.add("active");
+  if (name === "leaderboard") loadLeaderboard();
+}
+
+// ============================================================
+// 排行榜
+// ============================================================
+
+const TITLES = [
+  { min: 200, label: "🤖 AI 之神", color: "#9b59b6" },
+  { min: 180, label: "🔥 YOLO 達人", color: "#e74c3c" },
+  { min: 160, label: "⚡ 神經網路俠", color: "#e67e22" },
+  { min: 140, label: "🧠 深度學習者", color: "#2980b9" },
+  { min: 120, label: "🐍 Python 新星", color: "#27ae60" },
+  { min: 100, label: "🌱 AI 幼苗", color: "#16a085" },
+  { min:   0, label: "🐣 剛出殼的蛋", color: "#95a5a6" },
+];
+
+function getTitle(total) {
+  if (total == null) return { label: "—", color: "#ccc" };
+  return TITLES.find(t => total >= t.min) || TITLES[TITLES.length - 1];
+}
+
+function scoreClass(s) {
+  if (s == null) return "na";
+  if (s >= 100) return "perfect";
+  if (s >= 80)  return "great";
+  if (s >= 60)  return "ok";
+  return "low";
+}
+
+function fmt(s) { return s != null ? s : "—"; }
+
+async function loadLeaderboard() {
+  const loading = document.getElementById("lb-loading");
+  const content = document.getElementById("lb-content");
+  const empty   = document.getElementById("lb-empty");
+  loading.classList.remove("hidden");
+  content.classList.add("hidden");
+  empty.classList.add("hidden");
+
+  let rows = [];
+  try {
+    const res = await fetch("/api/training-records?leaderboard=1");
+    if (res.ok) rows = await res.json();
+  } catch { /* 靜默失敗 */ }
+
+  loading.classList.add("hidden");
+
+  if (!rows.length) { empty.classList.remove("hidden"); return; }
+
+  // 計算總分排序
+  rows = rows
+    .map(r => ({
+      ...r,
+      total: (r.quiz1_score ?? 0) + (r.quiz2_score ?? 0),
+      hasScore: r.quiz1_score != null || r.quiz2_score != null,
+    }))
+    .sort((a, b) => {
+      if (!a.hasScore && !b.hasScore) return 0;
+      if (!a.hasScore) return 1;
+      if (!b.hasScore) return -1;
+      return b.total - a.total;
+    });
+
+  const myEmpId = currentUser?.empId;
+
+  // 獎台（前三名有成績的）
+  const scorers = rows.filter(r => r.hasScore);
+  const podium  = document.getElementById("lb-podium");
+  const medals  = ["🥇", "🥈", "🥉"];
+  const podiumOrder = [1, 0, 2]; // 視覺順序：2nd 左、1st 中、3rd 右
+  if (scorers.length >= 1) {
+    podium.innerHTML = podiumOrder
+      .filter(i => scorers[i])
+      .map(i => {
+        const r = scorers[i];
+        const rank = i + 1;
+        const t = getTitle(r.total);
+        return `
+        <div class="podium-card rank-${rank}">
+          <span class="podium-medal">${medals[i]}</span>
+          <div class="podium-name">${escapeHtml(r.name)}</div>
+          <div class="podium-dept">${escapeHtml(r.dept || "")}</div>
+          <div class="podium-score">${r.total}<small> 分</small></div>
+          <div class="podium-title" style="color:${t.color}">${t.label}</div>
+        </div>`;
+      }).join("");
+  } else {
+    podium.innerHTML = "";
+  }
+
+  // 完整表格
+  const tbody = document.getElementById("lb-tbody");
+  tbody.innerHTML = rows.map((r, idx) => {
+    const rank = r.hasScore ? idx + 1 : "—";
+    const rankClass = rank === 1 ? "top1" : rank === 2 ? "top2" : rank === 3 ? "top3" : "";
+    const t = getTitle(r.hasScore ? r.total : null);
+    const isMe = r.emp_id === myEmpId || (currentUser && r.name === currentUser.name && r.dept === currentUser.dept);
+    const totalDisplay = r.hasScore ? r.total : "—";
+    return `<tr class="${isMe ? "my-row" : ""}">
+      <td><span class="lb-rank-num ${rankClass}">${typeof rank === "number" ? rank : "—"}</span></td>
+      <td>${escapeHtml(r.name)}${isMe ? " 👈 你" : ""}</td>
+      <td style="font-size:.82rem">${escapeHtml(r.dept || "—")}</td>
+      <td><span class="lb-score-cell ${scoreClass(r.quiz1_score)}">${fmt(r.quiz1_score)}</span></td>
+      <td><span class="lb-score-cell ${scoreClass(r.quiz2_score)}">${fmt(r.quiz2_score)}</span></td>
+      <td><span class="lb-score-cell ${scoreClass(r.hasScore ? r.total : null)}">${totalDisplay}</span></td>
+      <td><span class="lb-badge" style="background:${t.color}22;color:${t.color}">${t.label}</span></td>
+    </tr>`;
+  }).join("");
+
+  content.classList.remove("hidden");
 }
 
 document.querySelectorAll(".tab-btn").forEach(btn => {

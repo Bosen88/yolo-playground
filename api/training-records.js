@@ -100,6 +100,16 @@ module.exports = async function handler(req, res) {
     return res.status(200).json(data[0] || null);
   }
 
+  // 公開排行榜（不需要 admin token，只回傳姓名、部門、分數）
+  if (req.method === "GET" && req.query.leaderboard === "1") {
+    const result = await supabaseFetch(
+      `${SUPABASE_TABLE}?select=name,dept,quiz1_score,quiz2_score&order=quiz1_score.desc.nullslast`
+    );
+    if (!result.ok) return res.status(result.status).json([]);
+    const data = await result.json();
+    return res.status(200).json(data);
+  }
+
   if (!verifyAdminToken(req)) {
     return res.status(401).json({ ok: false, message: "Admin token required" });
   }
