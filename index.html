@@ -1878,6 +1878,7 @@ async function upsertRecord(patch) {
   if (!res.ok) {
     const err = await res.text();
     console.error("Record upsert error:", err);
+    throw new Error(`報到資料儲存失敗（HTTP ${res.status}）`);
   }
 }
 
@@ -1908,7 +1909,7 @@ let departmentOptions = [];
 
 async function loadDepartments() {
   try {
-    const res = await fetch("departments.txt", { cache: "force-cache" });
+    const res = await fetch("departments.txt", { cache: "no-cache" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     departmentOptions = text
@@ -2057,11 +2058,16 @@ async function submitRegister() {
         showPinSet(dept, name, empId);
       }
     } else {
-      throw new Error("API error");
+      let message = `報到服務錯誤（HTTP ${pinRes.status}）`;
+      try {
+        const data = await pinRes.json();
+        if (data?.message) message = data.message;
+      } catch {}
+      throw new Error(message);
     }
-  } catch {
+  } catch (error) {
     err.style.display = "block";
-    err.textContent = "網路錯誤，請重試";
+    err.textContent = error?.message || "網路錯誤，請重試";
   }
 
   btn.disabled = false;
